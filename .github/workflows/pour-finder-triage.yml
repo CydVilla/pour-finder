@@ -1,0 +1,100 @@
+name: Pour Finder moderation triage
+
+# Closes the loop between a moderation issue and the database.
+#
+# Pour Finder opens an issue when several independent people report that a deal
+# has ended or a bar has closed. A human (or an agent assigned to the issue)
+# decides, and closing the issue is what applies the decision:
+#
+#   Close as "completed"    -> expire the deal / mark the venue closed
+#   Close as "not planned"  -> dismiss the reports, leave the listing alone
+#
+# Nothing is ever deleted; expiring preserves the row and its revision history.
+#
+# Required repository secrets:
+#   POUR_FINDER_WEBHOOK_URL     https://<your-app>/api/webhooks/moderation
+#   POUR_FINDER_WEBHOOK_SECRET  same value as MODERATION_WEBHOOK_SECRET in the app
+
+on:
+  issues:
+    types: [closed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  apply-decision:
+    # Only issues this app opened.
+    if: contains(join(github.event.issue.labels.*.name, ','), 'pour-finder')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract moderation task id
+        id: task
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          # The task id is written into the issue body by src/server/escalation.ts
+          TASK_ID=$(printf '%s' "$ISSUE_BODY" \
+            | grep -oiE 'moderation task `[0-9a-f-]{36}`' \
+            | grep -oiE '[0-9a-f-]{36}' \
+            | head -1)
+          if [ -z "$TASK_ID" ]; then
+            echo "No Pour Finder task id found in issue body; nothing to do."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "id=$TASK_ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send signed decision
+        if: steps.task.outputs.found == 'true'
+        env:
+          WEBHOOK_URL: ${{ secrets.POUR_FINDER_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.POUR_FINDER_WEBHOOK_SECRET }}
+          TASK_ID: ${{ steps.task.outputs.id }}
+          # "completed" => apply, anything else ("not_planned") => dismiss
+          STATE_REASON: ${{ github.event.issue.state_reason }}
+          ACTOR: ${{ github.event.sender.login }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WEBHOOK_URL:-}" ] || [ -z "${WEBHOOK_SECRET:-}" ]; then
+            echo "::warning::POUR_FINDER_WEBHOOK_URL / _SECRET not configured; skipping."
+            exit 0
+          fi
+
+          if [ "$STATE_REASON" = "completed" ]; then DECISION="apply"; else DECISION="dismiss"; fi
+
+          PAYLOAD=$(jq -nc \
+            --arg taskId "$TASK_ID" \
+            --arg decision "$DECISION" \
+            --arg actor "github:${ACTOR}" \
+            --arg note "Issue #${{ github.event.issue.number }} closed as ${STATE_REASON}" \
+            '{taskId:$taskId, decision:$decision, actor:$actor, note:$note}')
+
+          SIG="sha256=$(printf '%s' "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | awk '{print $2}')"
+
+          HTTP_CODE=$(curl -sS -o /tmp/response.json -w '%{http_code}' \
+            -X POST "$WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -H "X-Pour-Finder-Signature: $SIG" \
+            --data "$PAYLOAD")
+
+          echo "Response $HTTP_CODE: $(cat /tmp/response.json)"
+          if [ "$HTTP_CODE" -ge 400 ]; then exit 1; fi
+
+      - name: Comment the outcome on the issue
+        if: steps.task.outputs.found == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reason = context.payload.issue.state_reason;
+            const applied = reason === 'completed';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: applied
+                ? '✅ Applied in Pour Finder — the listing is now expired. The record and its price history are preserved.'
+                : 'ℹ️ Dismissed in Pour Finder — the listing stays live and the reports were cleared.',
+            });

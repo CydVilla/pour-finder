@@ -1,0 +1,317 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Pour Finder design tokens
+
+   The identity: a paper receipt taped to a bar wall. Warm off-white ground,
+   near-black ink, one loud amber, and price set enormous. Utility over
+   decoration; a little personality; deliberately not a craft-beer moodboard
+   and deliberately not a grid of identical white Tailwind cards.
+   ========================================================================== */
+@theme {
+  --color-paper: #faf6ef;
+  --color-paper-sunk: #f2ece1;
+  --color-card: #ffffff;
+  --color-ink: #17130f;
+  --color-ink-soft: #57504a;
+  --color-ink-faint: #8a827a;
+  --color-rule: #e4dbcc;
+  --color-rule-strong: #cfc3ae;
+
+  --color-amber: #f0a202;
+  --color-amber-deep: #b97400;
+  --color-amber-wash: #fdf0d0;
+
+  --color-fresh: #1a7f47;
+  --color-fresh-wash: #e2f3e8;
+  --color-aging: #8a6a00;
+  --color-aging-wash: #f7eecf;
+  --color-stale: #a8500a;
+  --color-stale-wash: #f9e7d6;
+  --color-outdated: #9b2c2c;
+  --color-outdated-wash: #f7e0e0;
+  --color-unknown: #6b645d;
+  --color-unknown-wash: #eeeae3;
+
+  --font-display: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN",
+    "Segoe UI Variable Display", system-ui, sans-serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+  --radius-card: 14px;
+  --shadow-card: 0 1px 2px rgb(23 19 15 / 0.06), 0 4px 14px -8px rgb(23 19 15 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(23 19 15 / 0.08), 0 12px 28px -12px rgb(23 19 15 / 0.3);
+}
+
+:root {
+  color-scheme: light;
+  /* Real viewport height on mobile browsers with a collapsing URL bar. */
+  --app-vh: 100dvh;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+/* --------------------------------------------------------- accessibility */
+
+/* A visible, high-contrast focus ring everywhere. Never `outline: none`. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2.5px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -4rem;
+  z-index: 100;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------- typography */
+
+.price-hero {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* ----------------------------------------------------------- primitives */
+
+.pf-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* The ticket-stub divider between a venue's headline deal and its others. */
+.pf-perforation {
+  border-top: 1.5px dashed var(--color-rule-strong);
+}
+
+.pf-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  /* This app gets used one-handed, in a dark bar, while walking. Every chip
+     clears a 40px touch target regardless of how short its label is. */
+  min-height: 2.5rem;
+  border: 1.5px solid var(--color-rule-strong);
+  background: var(--color-card);
+  color: var(--color-ink);
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.pf-chip:hover:not(:disabled) {
+  border-color: var(--color-ink-faint);
+  background: var(--color-paper-sunk);
+}
+.pf-chip[aria-pressed="true"],
+.pf-chip[data-active="true"] {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.pf-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  font-weight: 700;
+  border-radius: 10px;
+  transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease;
+}
+.pf-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.pf-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pf-button-primary {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border: 1.5px solid var(--color-ink);
+}
+.pf-button-primary:hover:not(:disabled) {
+  background: #2b241d;
+}
+
+.pf-button-amber {
+  background: var(--color-amber);
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-amber-deep);
+}
+.pf-button-amber:hover:not(:disabled) {
+  background: #ffb51f;
+}
+
+.pf-button-quiet {
+  background: var(--color-card);
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-rule-strong);
+}
+.pf-button-quiet:hover:not(:disabled) {
+  background: var(--color-paper-sunk);
+}
+
+select.pf-control,
+.pf-input {
+  min-height: 2.5rem;
+}
+
+.pf-input {
+  width: 100%;
+  background: var(--color-card);
+  border: 1.5px solid var(--color-rule-strong);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  color: var(--color-ink);
+  font-size: 16px; /* iOS zooms inputs below 16px on focus. */
+}
+.pf-input::placeholder {
+  color: var(--color-ink-faint);
+}
+.pf-input:focus {
+  border-color: var(--color-ink);
+}
+
+/* ------------------------------------------------------------ scrollbars */
+
+.pf-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule-strong) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.pf-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+.pf-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-rule-strong);
+  border-radius: 999px;
+  border: 3px solid var(--color-paper);
+}
+
+/* Horizontal chip rails: swipeable, but the bar itself is visual noise. */
+.pf-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+.pf-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* ------------------------------------------------------------------- map */
+
+.maplibregl-map {
+  font-family: var(--font-sans);
+}
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+.maplibregl-popup-content {
+  padding: 0;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+}
+.maplibregl-popup-close-button {
+  font-size: 20px;
+  padding: 0 8px;
+  color: var(--color-ink-soft);
+}
+/* Canvas focus ring: keyboard users need to see the map has focus. */
+.maplibregl-canvas:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: -3px;
+}
+
+/* --------------------------------------------------------------- motion */
+
+@keyframes pf-sheet-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.pf-sheet-in {
+  animation: pf-sheet-in 0.18s ease-out;
+}
+
+@keyframes pf-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.pf-fade-in {
+  animation: pf-fade-in 0.15s ease-out;
+}
+
+/* Skeleton shimmer, reduced-motion safe via the global override above. */
+@keyframes pf-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.pf-pulse {
+  animation: pf-pulse 1.4s ease-in-out infinite;
+}
