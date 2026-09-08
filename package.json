@@ -17,7 +17,8 @@
     "env:pull": "vercel env pull .env.production.local --environment=production",
     "db:check:prod": "tsx --env-file=.env.production.local scripts/db-check.ts",
     "db:push:prod": "tsx --env-file=.env.production.local src/db/migrate.ts",
-    "db:seed:prod": "tsx --env-file=.env.production.local src/db/seed.ts"
+    "db:seed:prod": "tsx --env-file=.env.production.local src/db/seed.ts",
+    "setup:prod": "bash scripts/setup-production.sh"
   },
   "dependencies": {
     "clsx": "^2.1.1",

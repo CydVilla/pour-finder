@@ -313,13 +313,23 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
           </Field>
 
           <Field label="How much?" required>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <span aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-faint">
+            {/*
+              A <select> will not shrink below the intrinsic width of its
+              widest option, and flex items default to min-width:auto — so
+              pairing it with a flex-1 input collapsed the price field to the
+              width of the "$" sign. The price gets a fixed, comfortable basis
+              and the select is explicitly allowed to shrink instead.
+            */}
+            <div className="flex items-stretch gap-2">
+              <div className="relative w-[8.5rem] shrink-0">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-ink-faint"
+                >
                   $
                 </span>
                 <input
-                  className="pf-input pl-7 text-lg font-bold tabular-nums"
+                  className="pf-input h-full pl-7 text-lg font-bold tabular-nums"
                   inputMode="decimal"
                   placeholder="3.00"
                   aria-label="Price in dollars"
@@ -328,7 +338,7 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
                 />
               </div>
               <select
-                className="pf-input w-auto"
+                className="pf-input min-w-0 flex-1"
                 aria-label="Serving type"
                 value={servingType}
                 onChange={(event) =>
