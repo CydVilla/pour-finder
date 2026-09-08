@@ -11,6 +11,7 @@ import {
   type NewDeal,
   type Submission,
 } from "@/db/schema";
+import { envBool } from "@/lib/env";
 import { buildDealDedupeKey } from "@/lib/slug";
 import type { DealDetailsInput, SubmissionInput } from "@/lib/submission-schemas";
 import type { SubmitResult } from "@/lib/types";
@@ -29,7 +30,7 @@ import { createVenue } from "./venues";
  * MODERATION_AUTO_APPROVE=true collapses the queue for a solo operator seeding
  * a new market. It is not appropriate once the site has open traffic.
  */
-const autoApprove = () => process.env.MODERATION_AUTO_APPROVE === "true";
+const autoApprove = () => envBool("MODERATION_AUTO_APPROVE");
 
 export async function createSubmission(
   input: SubmissionInput,

@@ -2,8 +2,9 @@ import type { MetadataRoute } from "next";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { listIndexableVenueSlugs } from "@/server/venues";
+import { siteUrl } from "@/lib/env";
 
-const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const base = siteUrl();
 
 /**
  * Sitemap. Grows with the dataset rather than with a hardcoded list, so

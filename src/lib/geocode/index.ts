@@ -1,4 +1,5 @@
 import "server-only";
+import { envString } from "@/lib/env";
 import { gazetteerGeocoder } from "./gazetteer";
 import { nominatimGeocoder } from "./nominatim";
 import type { GeocodeResult } from "./types";
@@ -15,7 +16,7 @@ export async function geocode(query: string, limit = 6): Promise<GeocodeResult[]
   const local = await gazetteerGeocoder.search(query, { limit });
   if (local.length > 0) return local;
 
-  if ((process.env.GEOCODER ?? "gazetteer") === "nominatim") {
+  if (envString("GEOCODER", "gazetteer") === "nominatim") {
     return nominatimGeocoder.search(query, { limit });
   }
   return [];

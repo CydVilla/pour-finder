@@ -1,4 +1,5 @@
 import "server-only";
+import { envString } from "@/lib/env";
 import type { GeocodeResult, Geocoder } from "./types";
 
 /**
@@ -14,8 +15,8 @@ export const nominatimGeocoder: Geocoder = {
   name: "nominatim",
 
   async search(query, options): Promise<GeocodeResult[]> {
-    const base = process.env.NOMINATIM_BASE_URL ?? "https://nominatim.openstreetmap.org";
-    const email = process.env.NOMINATIM_CONTACT_EMAIL;
+    const base = envString("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org");
+    const email = envString("NOMINATIM_CONTACT_EMAIL");
     if (!email) {
       console.warn(
         "[geocode] NOMINATIM_CONTACT_EMAIL is unset; Nominatim requires it. Skipping.",

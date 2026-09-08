@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { envString } from "@/lib/env";
 
 /**
  * Anonymous contributor identity.
@@ -22,7 +23,7 @@ export function submitterHashFromRequest(request: NextRequest | Request): string
     headers.get("cf-connecting-ip") ??
     "0.0.0.0";
   const userAgent = headers.get("user-agent") ?? "unknown";
-  const salt = process.env.SUBMITTER_HASH_SALT ?? "dev-salt";
+  const salt = envString("SUBMITTER_HASH_SALT", "dev-salt");
 
   return createHash("sha256").update(`${salt}|${ip}|${userAgent}`).digest("hex").slice(0, 40);
 }

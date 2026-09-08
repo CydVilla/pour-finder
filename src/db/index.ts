@@ -1,5 +1,6 @@
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { envBool, envInt, envString } from "@/lib/env";
 import * as schema from "./schema";
 
 /**
@@ -19,7 +20,7 @@ const globalForDb = globalThis as unknown as {
 };
 
 function connectionString(): string {
-  const url = process.env.DATABASE_URL;
+  const url = envString("DATABASE_URL");
   if (!url) {
     throw new Error(
       "DATABASE_URL is not set. Copy .env.example to .env (locally) or add it to your " +
@@ -39,7 +40,9 @@ export function getClient(): postgres.Sql {
 
   const client = postgres(connectionString(), {
     // 1 is right for serverless; raise it on a long-lived host.
-    max: Number(process.env.DATABASE_POOL_MAX ?? 10),
+    // envInt, not Number(): an empty DATABASE_POOL_MAX would parse to 0,
+    // i.e. a pool that can never open a connection.
+    max: envInt("DATABASE_POOL_MAX", 10),
     idle_timeout: 20,
     connect_timeout: 10,
     transform: { undefined: null },
@@ -54,7 +57,7 @@ export function getClient(): postgres.Sql {
 
 function getDb(): PostgresJsDatabase<typeof schema> {
   if (globalForDb.__pourFinderDb) return globalForDb.__pourFinderDb;
-  const instance = drizzle(getClient(), { schema, logger: process.env.DB_LOG === "true" });
+  const instance = drizzle(getClient(), { schema, logger: envBool("DB_LOG") });
   globalForDb.__pourFinderDb = instance;
   return instance;
 }

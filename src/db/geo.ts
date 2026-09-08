@@ -18,6 +18,7 @@
  */
 import "server-only";
 import { sql, type SQL } from "drizzle-orm";
+import { envString } from "@/lib/env";
 import {
   boundingBoxFromRadius,
   EARTH_RADIUS_M,
@@ -34,7 +35,7 @@ let cached: Promise<GeoBackend> | null = null;
 
 export function resolveGeoBackend(): Promise<GeoBackend> {
   if (cached) return cached;
-  const configured = (process.env.GEO_BACKEND ?? "auto").toLowerCase();
+  const configured = envString("GEO_BACKEND", "auto").toLowerCase();
 
   if (configured === "haversine") {
     cached = Promise.resolve<GeoBackend>("haversine");

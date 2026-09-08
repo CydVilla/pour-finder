@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DiscoveryApp } from "@/components/DiscoveryApp";
+import { envString } from "@/lib/env";
 import { parseFilters } from "@/lib/filters";
 import { searchDeals } from "@/server/deals-query";
 import type { DealSearchResponse } from "@/lib/types";
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
  * shares a location or searches a place, the state filter is dropped entirely
  * so results cross state lines (Attleboro should see Providence).
  */
-const DEFAULT_STATE = process.env.NEXT_PUBLIC_DEFAULT_STATE ?? "MA";
+const DEFAULT_STATE = envString("NEXT_PUBLIC_DEFAULT_STATE", "MA");
 
 export default async function HomePage({
   searchParams,

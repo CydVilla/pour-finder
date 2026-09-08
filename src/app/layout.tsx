@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { AgeNotice } from "@/components/AgeNotice";
+import { siteUrl } from "@/lib/env";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// Validated and guaranteed parseable - see src/lib/env.ts.
+const site = siteUrl();
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(site),
   title: {
     default: "Pour Finder — cheap beer near you",
     template: "%s · Pour Finder",
@@ -18,7 +20,7 @@ export const metadata: Metadata = {
     siteName: "Pour Finder",
     title: "Pour Finder — cheap beer near you",
     description: "Community-reported cheap beer deals, with verification dates you can trust.",
-    url: siteUrl,
+    url: site,
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },

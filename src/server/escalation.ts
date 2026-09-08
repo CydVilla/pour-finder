@@ -2,6 +2,7 @@ import "server-only";
 import { and, desc, eq, gte, isNull, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { comments, deals, moderationTasks, venues, type ModerationTask } from "@/db/schema";
+import { envInt } from "@/lib/env";
 import { formatCents } from "@/lib/money";
 import { commentOnIssue, createIssue, isGitHubEscalationEnabled } from "./integrations/github";
 
@@ -23,8 +24,8 @@ const DEFAULT_THRESHOLD = 2;
 const LOOKBACK_DAYS = 60;
 
 function threshold(): number {
-  const raw = Number(process.env.ESCALATION_THRESHOLD);
-  return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : DEFAULT_THRESHOLD;
+  const raw = envInt("ESCALATION_THRESHOLD", DEFAULT_THRESHOLD);
+  return raw >= 1 ? Math.floor(raw) : DEFAULT_THRESHOLD;
 }
 
 export interface EscalationOutcome {
