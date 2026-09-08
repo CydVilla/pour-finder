@@ -13,7 +13,11 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:reset": "tsx src/db/migrate.ts --drop && tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "db:check": "tsx scripts/db-check.ts"
+    "db:check": "tsx scripts/db-check.ts",
+    "env:pull": "vercel env pull .env.production.local --environment=production",
+    "db:check:prod": "tsx --env-file=.env.production.local scripts/db-check.ts",
+    "db:push:prod": "tsx --env-file=.env.production.local src/db/migrate.ts",
+    "db:seed:prod": "tsx --env-file=.env.production.local src/db/seed.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

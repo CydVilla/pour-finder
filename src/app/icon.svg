@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pour Finder">
+  <rect width="64" height="64" rx="14" fill="#17130f"/>
+  <!-- Beer glass: amber body, foam head, price-tag simplicity at 16px. -->
+  <path d="M20 18h20l-2.2 30a4 4 0 0 1-4 3.6h-7.6a4 4 0 0 1-4-3.6z" fill="#f0a202"/>
+  <path d="M20 18h20l-.5 7H20.5z" fill="#fff8e7"/>
+  <path d="M41 24h3.5a6.5 6.5 0 0 1 0 13H40l.5-4h3.5a2.5 2.5 0 0 0 0-5H40.7z" fill="#f0a202"/>
+</svg>

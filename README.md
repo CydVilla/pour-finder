@@ -56,6 +56,8 @@ city/ZIP search is served by a built-in offline gazetteer.
 | `npm run db:seed -- --fresh` | Wipe venues/deals/places first |
 | `npm run db:seed -- --demo` | Also add labelled fixtures for happy hours, conditional rules and buckets |
 | `npm run db:check` | Validate `DATABASE_URL` and test connectivity (prints no secrets) |
+| `npm run env:pull` | Pull the deployed env into `.env.production.local` |
+| `npm run db:push:prod` / `db:seed:prod` | Migrate/seed the deployed database |
 | `npm run db:studio` | Drizzle Studio |
 
 ---
@@ -72,8 +74,16 @@ city/ZIP search is served by a built-in offline gazetteer.
 | Map | **MapLibre GL JS** + CARTO basemap | See [Map](#map) |
 | Validation | **Zod**, shared by the form and the route handler | One schema, two consumers |
 
-Full reasoning: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-Deploying for **$0**: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+**Docs**
+
+| | |
+|---|---|
+| [`docs/SETUP.md`](docs/SETUP.md) | Runbook: local dev, deploy, every env var, every asset, failure modes |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How it fits together, and why |
+| [`docs/adr/`](docs/adr/) | Decision records — ten decisions with the consequences each one costs |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Deploying for $0 |
+| [`CHANGELOG.md`](CHANGELOG.md) | What changed |
+| [`TODO.md`](TODO.md) | What's next, and known limitations |
 
 ---
 
