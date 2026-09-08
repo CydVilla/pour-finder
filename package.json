@@ -12,7 +12,8 @@
     "db:push": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
     "db:reset": "tsx src/db/migrate.ts --drop && tsx src/db/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:check": "tsx scripts/db-check.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

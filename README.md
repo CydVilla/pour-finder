@@ -55,6 +55,7 @@ city/ZIP search is served by a built-in offline gazetteer.
 | `npm run db:seed` | Seed the Massachusetts data (idempotent) |
 | `npm run db:seed -- --fresh` | Wipe venues/deals/places first |
 | `npm run db:seed -- --demo` | Also add labelled fixtures for happy hours, conditional rules and buckets |
+| `npm run db:check` | Validate `DATABASE_URL` and test connectivity (prints no secrets) |
 | `npm run db:studio` | Drizzle Studio |
 
 ---

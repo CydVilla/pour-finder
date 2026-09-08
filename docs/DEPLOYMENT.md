@@ -27,24 +27,49 @@ Why this pairing:
 
 ### Steps
 
-1. **Database** — create a Neon project, copy the pooled connection string.
+1. **Database** — create a Neon project. In **Connection Details**, choose
+   **Pooled connection** and copy the string. It looks like:
+
+   ```
+   postgres://neondb_owner:PASSWORD@ep-something-12345678-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
+   ```
+
+   > Take the **pooled** endpoint (the host contains `-pooler`). Serverless
+   > functions open many short-lived connections and will exhaust the direct
+   > endpoint. Keep `?sslmode=require` — Neon rejects plaintext.
+
+   Optionally enable PostGIS in the Neon SQL editor:
    ```sql
    CREATE EXTENSION IF NOT EXISTS postgis;   -- optional but recommended
    CREATE EXTENSION IF NOT EXISTS pg_trgm;
    ```
-2. **Migrate and seed** from your laptop against the remote database:
+
+2. **Check the string before using it**, then migrate and seed from your
+   laptop — Vercel does not run migrations for you:
    ```bash
-   DATABASE_URL="postgres://…neon.tech/pour_finder?sslmode=require" npm run db:push
-   DATABASE_URL="postgres://…neon.tech/pour_finder?sslmode=require" npm run db:seed
+   export DATABASE_URL="<paste your real Neon pooled string here>"
+   npm run db:check     # validates the URL and connects; prints no secrets
+   npm run db:push      # create the schema
+   npm run db:seed      # load the Massachusetts data
    ```
+
+   `db:check` catches the common mistakes: a placeholder pasted verbatim, a
+   missing `sslmode`, the direct-vs-pooled endpoint, auth failures, and a
+   database that connected but has no schema yet.
 3. **Deploy** — import the GitHub repo into Vercel and set:
-   ```
-   DATABASE_URL              (Neon pooled string)
-   NEXT_PUBLIC_SITE_URL      https://your-domain
-   SUBMITTER_HASH_SALT       openssl rand -hex 32
-   ADMIN_TOKEN               openssl rand -hex 32
-   GEO_BACKEND               auto
-   ```
+   | Variable | Value |
+   |---|---|
+   | `DATABASE_URL` | your real Neon **pooled** string |
+   | `NEXT_PUBLIC_SITE_URL` | `https://your-project.vercel.app` |
+   | `SUBMITTER_HASH_SALT` | output of `openssl rand -hex 32` |
+   | `ADMIN_TOKEN` | output of `openssl rand -hex 32` |
+   | `GEO_BACKEND` | `auto` |
+
+   Tick **Production**, **Preview** and **Development** for each.
+
+   > **Adding environment variables does not rebuild anything.** Vercel bakes
+   > them in at build time, so after saving you must redeploy:
+   > Deployments → latest → ⋯ → **Redeploy**.
 4. **Domain** — a subdomain of a domain you already own is free. Add a CNAME in
    Cloudflare DNS (set it to **DNS only**, not proxied, so Vercel can issue TLS).
 
@@ -89,7 +114,7 @@ To mirror moderation tasks as GitHub issues:
    **Issues: read & write**.
 2. App environment:
    ```
-   GITHUB_TOKEN=github_pat_…
+   GITHUB_TOKEN=github_pat_YOUR_TOKEN_HERE
    GITHUB_REPO=CydVilla/pour-finder
    GITHUB_ISSUE_LABELS=pour-finder,data-review
    GITHUB_ISSUE_ASSIGNEES=            # add `Copilot` only if you have the paid agent
