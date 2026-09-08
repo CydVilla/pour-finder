@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CommentsPanel } from "./CommentsPanel";
 import { DealRow } from "./DealRow";
+import { MapLink } from "./MapLink";
 import { ReportSheet } from "./ReportSheet";
 import type { DealDTO, VenueDTO } from "@/lib/types";
 
@@ -29,9 +30,20 @@ export function VenueDetail({ venue: initial }: { venue: VenueDTO }) {
         <header className="border-b border-rule p-5">
           <h1 className="wordmark text-2xl leading-tight">{venue.name}</h1>
           <p className="mt-1 text-sm text-ink-soft">
-            {[venue.address1, venue.neighborhood, venue.city, venue.state, venue.postalCode]
-              .filter(Boolean)
-              .join(", ")}
+            <MapLink
+              name={venue.name}
+              address1={venue.address1}
+              city={venue.city}
+              state={venue.state}
+              postalCode={venue.postalCode}
+              latitude={venue.latitude}
+              longitude={venue.longitude}
+              className="text-ink-soft"
+            >
+              {[venue.address1, venue.neighborhood, venue.city, venue.state, venue.postalCode]
+                .filter(Boolean)
+                .join(", ")}
+            </MapLink>
           </p>
 
           {venue.status === "permanently_closed" && (
@@ -47,16 +59,18 @@ export function VenueDetail({ venue: initial }: { venue: VenueDTO }) {
           {venue.notes && <p className="mt-2 text-xs italic text-ink-faint">{venue.notes}</p>}
 
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            <a
-              className="font-semibold underline underline-offset-2"
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                [venue.name, venue.address1, venue.city, venue.state].filter(Boolean).join(", "),
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <MapLink
+              name={venue.name}
+              address1={venue.address1}
+              city={venue.city}
+              state={venue.state}
+              postalCode={venue.postalCode}
+              latitude={venue.latitude}
+              longitude={venue.longitude}
+              className="font-semibold"
             >
               Directions
-            </a>
+            </MapLink>
             {venue.website && (
               <a
                 className="font-semibold underline underline-offset-2"

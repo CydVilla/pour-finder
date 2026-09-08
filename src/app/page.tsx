@@ -14,10 +14,25 @@ import type { DealSearchResponse } from "@/lib/types";
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Cheap beer near you",
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const resolved = await searchParams;
+  // Any filter, viewport or position turns this into a slice of the same
+  // content. Canonicalise to "/" and keep the variants out of the index —
+  // the city and price routes are the pages meant to rank.
+  const isFiltered = Object.keys(resolved).length > 0;
+
+  return {
+    title: "Cheap beer near you",
+    description:
+      "Find cheap beer near you. Community-reported prices at bars, restaurants and breweries, each showing the date it was last confirmed.",
+    alternates: { canonical: "/" },
+    robots: isFiltered ? { index: false, follow: true } : undefined,
+  };
+}
 
 /**
  * Massachusetts is the launch market, so it is the default *filter value* -

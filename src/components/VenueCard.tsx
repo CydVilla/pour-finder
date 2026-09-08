@@ -1,12 +1,14 @@
 "use client";
 
 import clsx from "clsx";
+import Link from "next/link";
 import { useState } from "react";
 import { formatDistance, formatServingDescription, pluralize } from "@/lib/format";
 import { freshnessHint } from "@/lib/freshness";
 import { formatCents, formatPricePerOunce } from "@/lib/money";
 import type { DealDTO, VenueDTO } from "@/lib/types";
 import { CommentsPanel } from "./CommentsPanel";
+import { MapLink } from "./MapLink";
 import { DealRow } from "./DealRow";
 import { FreshnessBadge } from "./FreshnessBadge";
 import { PriceBlock } from "./PriceBlock";
@@ -45,13 +47,23 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
         isSelected && "ring-2 ring-ink ring-offset-2 ring-offset-paper",
       )}
     >
-      {/* Whole-card click target selects the venue and pans the map. */}
-      <button
-        type="button"
-        onClick={() => onSelect(venue.id)}
-        aria-expanded={expanded}
-        className="flex w-full gap-3 p-3 text-left"
-      >
+      {/*
+        The card body is a full-bleed button (select on the map) with the venue
+        name layered above it as a real link. Nesting an <a> inside a <button>
+        is invalid HTML, and without a crawlable <a href> the venue pages have
+        no inbound links at all — the sitemap was the only path to them.
+        The overlay pattern keeps both: click anywhere to select, click the
+        name to open the venue page, and both are keyboard reachable.
+      */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => onSelect(venue.id)}
+          aria-label={`Show ${venue.name} on the map`}
+          className="absolute inset-0 z-0 size-full"
+        />
+
+        <div className="pointer-events-none relative z-10 flex gap-3 p-3 text-left">
         <div
           aria-hidden
           className="flex w-[76px] shrink-0 flex-col items-center justify-center rounded-lg bg-amber-wash px-1 py-2"
@@ -66,8 +78,13 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="wordmark truncate text-[1.05rem] leading-snug text-ink">
-              {venue.name}
+            <h3 className="wordmark min-w-0 truncate text-[1.05rem] leading-snug text-ink">
+              <Link
+                href={`/venue/${venue.slug}`}
+                className="pointer-events-auto hover:underline hover:decoration-rule-strong hover:underline-offset-4"
+              >
+                {venue.name}
+              </Link>
             </h3>
             {distance && (
               <span className="shrink-0 pt-0.5 text-xs font-semibold text-ink-soft tabular-nums">
@@ -115,13 +132,11 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
             <p className="mt-1.5 text-xs font-semibold text-ink-soft">
               {pluralize(venue.dealCount, "deal")} from{" "}
               {formatCents(venue.cheapestPriceCents)}
-              <span aria-hidden className="ml-1">
-                {expanded ? "▴" : "▾"}
-              </span>
             </p>
           )}
         </div>
-      </button>
+        </div>
+      </div>
 
       <div className="border-t border-rule px-3 pb-1">
         <button
@@ -167,15 +182,18 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
           </div>
 
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-faint">
-            {venue.address1 && <span>{venue.address1}</span>}
-            <a
-              className="underline underline-offset-2 hover:text-ink"
-              href={mapsUrl(venue)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <MapLink
+              name={venue.name}
+              address1={venue.address1}
+              city={venue.city}
+              state={venue.state}
+              postalCode={venue.postalCode}
+              latitude={venue.latitude}
+              longitude={venue.longitude}
+              className="hover:text-ink"
             >
-              Directions
-            </a>
+              {venue.address1 ? `${venue.address1} — directions` : "Directions"}
+            </MapLink>
             {venue.website && (
               <a
                 className="underline underline-offset-2 hover:text-ink"
@@ -194,14 +212,6 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
       )}
     </article>
   );
-}
-
-/** Native maps app on mobile, Google Maps on desktop. */
-function mapsUrl(venue: VenueDTO): string {
-  const query = encodeURIComponent(
-    [venue.name, venue.address1, venue.city, venue.state].filter(Boolean).join(", "),
-  );
-  return `https://www.google.com/maps/search/?api=1&query=${query}`;
 }
 
 export function VenueCardSkeleton() {

@@ -44,6 +44,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
 
+    // Price-tier landing pages, only for tiers that return something.
+    const tiers = (await db.execute(sql`
+      SELECT lower(venues.state) AS state, venues.city_slug AS city, t.cap
+      FROM (VALUES (200), (300), (500), (1000), (2000)) AS t(cap)
+      CROSS JOIN LATERAL (
+        SELECT DISTINCT venues.state, venues.city_slug
+        FROM venues
+        JOIN deals ON deals.venue_id = venues.id
+         AND deals.status = 'active' AND deals.price_cents <= t.cap
+        WHERE venues.status <> 'permanently_closed'
+      ) AS venues
+      LIMIT 2000
+    `)) as unknown as { state: string; city: string; cap: number }[];
+
+    for (const tier of tiers) {
+      entries.push({
+        url: `${base}/deals-under/${tier.cap / 100}/${tier.state}/${tier.city}`,
+        changeFrequency: "daily",
+        priority: 0.6,
+      });
+    }
+
     for (const venue of await listIndexableVenueSlugs()) {
       entries.push({
         url: `${base}/venue/${venue.slug}`,
