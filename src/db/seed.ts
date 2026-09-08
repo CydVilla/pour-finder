@@ -11,7 +11,7 @@
  */
 import "dotenv/config";
 import { sql } from "drizzle-orm";
-import { db, client } from "./index";
+import { closeDb, db } from "./index";
 import {
   dealRevisions,
   dealSchedules,
@@ -245,9 +245,9 @@ function serialize(row: Record<string, unknown>): Record<string, unknown> {
 }
 
 main()
-  .then(() => client.end({ timeout: 5 }))
+  .then(() => closeDb())
   .catch(async (error) => {
     console.error(error);
-    await client.end({ timeout: 5 });
+    await closeDb();
     process.exit(1);
   });

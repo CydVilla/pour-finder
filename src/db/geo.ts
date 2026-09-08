@@ -24,7 +24,7 @@ import {
   type BoundingBox,
   type LatLng,
 } from "@/lib/geo-math";
-import { client } from "./index";
+import { getClient } from "./index";
 
 export * from "@/lib/geo-math";
 
@@ -43,7 +43,7 @@ export function resolveGeoBackend(): Promise<GeoBackend> {
 
   cached = (async (): Promise<GeoBackend> => {
     try {
-      await client`SELECT postgis_version()`;
+      await getClient()`SELECT postgis_version()`;
       return "postgis";
     } catch {
       if (configured === "postgis") {

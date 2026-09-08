@@ -278,8 +278,18 @@ See [`TODO.md`](TODO.md) for what's next.
 
 ---
 
+## Contributing
+
+Beer prices are the contribution that matters most, and they need no account and
+no code — just use the site. The one rule: **don't guess.** If a bar advertises
+"$1 drafts" without saying the size, leave the size blank. An honest unknown is
+useful data; a plausible guess quietly corrupts every value comparison on the
+site.
+
+For code, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Licence
 
-Not yet chosen — add one before making the repository public.
+[MIT](LICENSE) © Cyd Villavicencio
 
 *Drink responsibly. 21+.*

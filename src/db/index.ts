@@ -1,36 +1,89 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error(
-    "DATABASE_URL is not set. Copy .env.example to .env and point it at a Postgres instance.",
-  );
-}
-
 /**
- * Reuse the client across hot reloads and (on long-lived hosts) across
- * requests. `max: 1` is the right default for serverless; bump it via
- * DATABASE_POOL_MAX when running on a persistent node.
+ * Database client.
+ *
+ * Connecting is LAZY on purpose. `next build` imports every route module to
+ * collect page data, so anything that opens a connection (or throws on a
+ * missing DATABASE_URL) at module scope turns a missing env var into a failed
+ * build rather than a clear runtime error. A build should not need a database.
+ *
+ * Everything below is created on first query instead, and cached for the life
+ * of the process.
  */
 const globalForDb = globalThis as unknown as {
   __pourFinderSql?: postgres.Sql;
+  __pourFinderDb?: PostgresJsDatabase<typeof schema>;
 };
 
-export const client =
-  globalForDb.__pourFinderSql ??
-  postgres(connectionString, {
+function connectionString(): string {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL is not set. Copy .env.example to .env (locally) or add it to your " +
+        "host's environment variables (in production) and point it at a Postgres instance.",
+    );
+  }
+  return url;
+}
+
+/**
+ * The raw postgres.js client. Prefer `db`; this exists for the few places that
+ * need a tagged-template query (the PostGIS probe) or connection lifecycle
+ * control (the seed script).
+ */
+export function getClient(): postgres.Sql {
+  if (globalForDb.__pourFinderSql) return globalForDb.__pourFinderSql;
+
+  const client = postgres(connectionString(), {
+    // 1 is right for serverless; raise it on a long-lived host.
     max: Number(process.env.DATABASE_POOL_MAX ?? 10),
     idle_timeout: 20,
     connect_timeout: 10,
-    // Keep numeric/decimal as strings so cent math never round-trips a float.
     transform: { undefined: null },
   });
 
-if (process.env.NODE_ENV !== "production") globalForDb.__pourFinderSql = client;
+  // Cache in prod too: on serverless the module is re-evaluated per cold start
+  // anyway, and on a persistent host this is what keeps the pool from leaking
+  // across hot reloads.
+  globalForDb.__pourFinderSql = client;
+  return client;
+}
 
-export const db = drizzle(client, { schema, logger: process.env.DB_LOG === "true" });
+function getDb(): PostgresJsDatabase<typeof schema> {
+  if (globalForDb.__pourFinderDb) return globalForDb.__pourFinderDb;
+  const instance = drizzle(getClient(), { schema, logger: process.env.DB_LOG === "true" });
+  globalForDb.__pourFinderDb = instance;
+  return instance;
+}
 
-export type Db = typeof db;
+/**
+ * Drizzle instance. Looks and behaves like a normal `db`, but the underlying
+ * connection isn't opened until the first property access, so importing this
+ * module is free.
+ */
+export const db: PostgresJsDatabase<typeof schema> = new Proxy(
+  {} as PostgresJsDatabase<typeof schema>,
+  {
+    get(_target, property) {
+      const instance = getDb() as unknown as Record<string | symbol, unknown>;
+      const value = instance[property];
+      // Bind so Drizzle's internals see the real instance as `this`, not the proxy.
+      return typeof value === "function" ? value.bind(instance) : value;
+    },
+  },
+);
+
+/** Closes the pool. Used by scripts; server processes keep it open. */
+export async function closeDb(timeoutSeconds = 5): Promise<void> {
+  const client = globalForDb.__pourFinderSql;
+  if (!client) return;
+  globalForDb.__pourFinderSql = undefined;
+  globalForDb.__pourFinderDb = undefined;
+  await client.end({ timeout: timeoutSeconds });
+}
+
+export type Db = PostgresJsDatabase<typeof schema>;
 export { schema };

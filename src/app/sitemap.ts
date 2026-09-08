@@ -8,7 +8,13 @@ const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 /**
  * Sitemap. Grows with the dataset rather than with a hardcoded list, so
  * launching a new state adds its pages automatically.
+ *
+ * Regenerated hourly rather than frozen at build time: new venues should show
+ * up for crawlers without a redeploy. It also degrades to just the homepage if
+ * the database is unreachable, so a build never depends on one.
  */
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: base, changeFrequency: "daily", priority: 1 },
