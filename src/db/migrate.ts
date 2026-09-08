@@ -44,6 +44,14 @@ async function main(): Promise<void> {
     const hasTrgm = await tryApply(sql, "optional-extensions.sql", "pg_trgm");
     if (hasTrgm) await tryApply(sql, "trigram-indexes.sql", "trigram indexes");
 
+    // Try to turn PostGIS on before probing. Most managed hosts (Neon,
+    // Supabase, RDS) ship it but leave it uninstalled, so the difference
+    // between the fast backend and the portable one is one statement nobody
+    // remembers to run.
+    if (!(await probe(sql, "SELECT postgis_version()"))) {
+      await tryApply(sql, "postgis-enable.sql", "PostGIS extension");
+    }
+
     const hasPostgis = await probe(sql, "SELECT postgis_version()");
     if (hasPostgis) {
       await tryApply(sql, "postgis.sql", "PostGIS geography column");
