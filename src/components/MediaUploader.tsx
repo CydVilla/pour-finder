@@ -3,6 +3,11 @@
 import { useRef, useState } from "react";
 import type { MediaPurpose } from "@/db/schema";
 import { MEDIA_LIMITS, formatBytes, kindForMimeType } from "@/lib/media-limits";
+import {
+  ImageProcessingError,
+  processImage,
+  processVideo,
+} from "@/lib/image-processing";
 import { parseDollarsToCents } from "@/lib/money";
 
 interface Props {
@@ -16,7 +21,7 @@ interface Props {
   onUploaded?: () => void;
 }
 
-type State = "idle" | "checking" | "uploading" | "done" | "error";
+type State = "idle" | "processing" | "uploading" | "done" | "error";
 
 /**
  * Direct-to-storage uploader.
@@ -51,7 +56,6 @@ export function MediaUploader({
   const handle = async (file: File) => {
     setMessage(null);
     setProgress(0);
-    setState("checking");
 
     const kind = kindForMimeType(file.type);
     if (!kind || (accept !== "both" && kind !== accept)) {
@@ -67,17 +71,54 @@ export function MediaUploader({
       return;
     }
 
-    if (kind === "video") {
-      const duration = await readVideoDuration(file);
-      if (duration !== null && duration > MEDIA_LIMITS.video.maxDurationSeconds) {
+    // Everything below happens before a single byte leaves the device.
+    setState("processing");
+
+    let body: Blob = file;
+    let bodyType = file.type;
+    let thumbnail: Blob | null = null;
+    let width: number | null = null;
+    let height: number | null = null;
+    let durationSeconds: number | null = null;
+
+    if (kind === "photo") {
+      try {
+        // Re-encoding through a canvas is what removes EXIF — including the
+        // GPS coordinates most phones write into every photo. These files are
+        // served publicly, so we refuse rather than upload an unprocessed one.
+        const processed = await processImage(file);
+        body = processed.full;
+        bodyType = processed.mimeType;
+        thumbnail = processed.thumbnail;
+        width = processed.width;
+        height = processed.height;
+      } catch (error) {
         setState("error");
         setMessage(
-          `That clip is ${Math.round(duration)}s — please keep it under ${
+          error instanceof ImageProcessingError
+            ? error.message
+            : "That image couldn't be processed.",
+        );
+        return;
+      }
+    } else {
+      const processed = await processVideo(file);
+      if (
+        processed.durationSeconds !== null &&
+        processed.durationSeconds > MEDIA_LIMITS.video.maxDurationSeconds
+      ) {
+        setState("error");
+        setMessage(
+          `That clip is ${Math.round(processed.durationSeconds)}s — please keep it under ${
             MEDIA_LIMITS.video.maxDurationSeconds
           }s.`,
         );
         return;
       }
+      thumbnail = processed.poster;
+      width = processed.width;
+      height = processed.height;
+      durationSeconds = processed.durationSeconds;
     }
 
     try {
@@ -88,15 +129,25 @@ export function MediaUploader({
           venueId,
           dealId: dealId ?? undefined,
           purpose,
-          mimeType: file.type,
-          sizeBytes: file.size,
+          mimeType: bodyType,
+          sizeBytes: body.size,
+          thumbnailMimeType: thumbnail ? thumbnail.type : undefined,
+          thumbnailSizeBytes: thumbnail ? thumbnail.size : undefined,
+          width: width ?? undefined,
+          height: height ?? undefined,
+          durationSeconds: durationSeconds ?? undefined,
           assertedPriceCents:
             purpose === "price_evidence" ? (parseDollarsToCents(price) ?? undefined) : undefined,
         }),
       });
 
       const ticket = (await ticketResponse.json()) as
-        | { mediaId: string; uploadUrl: string; reportUrl?: boolean }
+        | {
+            mediaId: string;
+            uploadUrl: string;
+            thumbnailUploadUrl?: string | null;
+            reportUrl?: boolean;
+          }
         | { error: string };
 
       if (!ticketResponse.ok || "error" in ticket) {
@@ -106,24 +157,36 @@ export function MediaUploader({
       }
 
       setState("uploading");
-      const uploadResponse = await putWithProgress(ticket.uploadUrl, file, setProgress);
+      const uploadResponse = await putWithProgress(ticket.uploadUrl, body, bodyType, setProgress);
+
+      // Thumbnails are a nicety; a failure here must not lose the upload.
+      let thumbResponse: string | null = null;
+      if (thumbnail && ticket.thumbnailUploadUrl) {
+        try {
+          thumbResponse = await putWithProgress(
+            ticket.thumbnailUploadUrl,
+            thumbnail,
+            thumbnail.type,
+            () => undefined,
+          );
+        } catch {
+          thumbResponse = null;
+        }
+      }
 
       // Vercel Blob returns the final URL in the PUT response; S3 does not
       // need one because the URL is derivable from the key.
       let resolvedUrl: string | null = null;
+      let resolvedThumbUrl: string | null = null;
       if (ticket.reportUrl) {
-        try {
-          const parsed = JSON.parse(uploadResponse) as { url?: string };
-          resolvedUrl = parsed.url ?? null;
-        } catch {
-          resolvedUrl = null;
-        }
+        resolvedUrl = urlFromResponse(uploadResponse);
+        resolvedThumbUrl = thumbResponse ? urlFromResponse(thumbResponse) : null;
       }
 
       const confirmResponse = await fetch(`/api/media/${ticket.mediaId}/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: resolvedUrl }),
+        body: JSON.stringify({ url: resolvedUrl, thumbnailUrl: resolvedThumbUrl }),
       });
       const confirmed = (await confirmResponse.json()) as { message?: string; error?: string };
 
@@ -194,17 +257,24 @@ export function MediaUploader({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        disabled={state === "uploading" || state === "checking"}
+        disabled={state === "uploading" || state === "processing"}
         className="pf-button pf-button-quiet w-full px-4 py-2.5 text-sm"
       >
         {state === "uploading"
           ? `Uploading… ${progress}%`
-          : state === "checking"
-            ? "Checking…"
+          : state === "processing"
+            ? "Preparing…"
             : label}
       </button>
 
       {hint && state === "idle" && <p className="text-xs text-ink-faint">{hint}</p>}
+      {state === "idle" && (
+        <p className="text-xs text-ink-faint">
+          {accept === "video"
+            ? "Location data is not removed from video files — check your clip before sharing."
+            : "Location data is removed from photos before they leave your device."}
+        </p>
+      )}
 
       {state === "uploading" && (
         <div
@@ -230,13 +300,14 @@ export function MediaUploader({
 /** XHR rather than fetch, because fetch still can't report upload progress. */
 function putWithProgress(
   url: string,
-  file: File,
+  body: Blob,
+  contentType: string,
   onProgress: (percent: number) => void,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.setRequestHeader("Content-Type", contentType);
     xhr.upload.addEventListener("progress", (event) => {
       if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
     });
@@ -246,25 +317,16 @@ function putWithProgress(
         : reject(new Error(`HTTP ${xhr.status}`)),
     );
     xhr.addEventListener("error", () => reject(new Error("network")));
-    xhr.send(file);
+    xhr.send(body);
   });
 }
 
-/** Reads duration from decoded metadata without uploading anything. */
-function readVideoDuration(file: File): Promise<number | null> {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const video = document.createElement("video");
-    video.preload = "metadata";
-    const done = (value: number | null) => {
-      URL.revokeObjectURL(url);
-      resolve(value);
-    };
-    video.addEventListener("loadedmetadata", () =>
-      done(Number.isFinite(video.duration) ? video.duration : null),
-    );
-    video.addEventListener("error", () => done(null));
-    video.src = url;
-    window.setTimeout(() => done(null), 5000);
-  });
+/** Vercel Blob returns the stored object's URL in the PUT response body. */
+function urlFromResponse(response: string): string | null {
+  try {
+    const parsed = JSON.parse(response) as { url?: string };
+    return parsed.url ?? null;
+  } catch {
+    return null;
+  }
 }

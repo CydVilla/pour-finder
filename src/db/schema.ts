@@ -753,6 +753,7 @@ export const media = pgTable(
     storageProvider: text("storage_provider"),
     /** Poster frame for video; a smaller variant for photos. */
     thumbnailKey: text("thumbnail_key"),
+    thumbnailUrl: text("thumbnail_url"),
 
     mimeType: text("mime_type").notNull(),
     sizeBytes: integer("size_bytes").notNull(),

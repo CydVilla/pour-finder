@@ -32,13 +32,21 @@ Running list. Newest thinking at the top of each section.
 ### Data quality
 - [x] ~~Menu photo uploads~~ — shipped, backed by Vercel Blob with R2 supported
       as an alternative. Direct presigned PUT, moderation queue, reject deletes.
-- [ ] **Server-side thumbnails.** `media.thumbnail_key` exists and is always
-      null. Full-size photos are served to the card carousel today, which is
-      wasteful on mobile data. Video has no poster frame at all.
-- [ ] **Strip EXIF from uploads.** Phone photos can carry GPS coordinates and
-      timestamps. Nothing currently removes them, and the files are public.
-- [ ] **Sweep abandoned uploads.** Rows with `uploaded_at IS NULL` older than a
-      day are tickets nobody completed; they cost nothing but should be pruned.
+- [x] ~~Thumbnails~~ — generated client-side in the same decode pass as the
+      EXIF strip; video gets a poster frame from ~1s in.
+- [x] ~~Strip EXIF~~ — photos are re-encoded through a canvas before upload,
+      which drops GPS/timestamps/device tags. Orientation is baked into the
+      pixels first so nothing comes out sideways. An image that cannot be
+      decoded is refused rather than uploaded raw.
+- [x] ~~Sweep abandoned uploads~~ — nightly cron also reconciles storage
+      against the database to collect orphaned objects.
+- [ ] **Video metadata is not stripped.** Re-encoding video in the browser is
+      too slow to do on upload, so containers may retain location data. The UI
+      says so; a server-side `ffmpeg -map_metadata -1` pass would fix it, but
+      needs somewhere to run that isn't a serverless function.
+- [ ] **HEIC on non-Safari.** Chrome and Firefox can't decode HEIC, so those
+      uploads are refused with a message rather than silently stripped-of-
+      nothing. A wasm decoder would close the gap.
 - [ ] **Move to R2 when video volume grows.** Blob's free tier is ~1 GB with
       metered egress; R2 is 10 GB with none. See docs/SETUP.md.
 - [ ] **Backfill real coordinates** for the venues currently marked

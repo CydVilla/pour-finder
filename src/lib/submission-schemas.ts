@@ -211,6 +211,12 @@ export const uploadTicketSchema = z.object({
   sizeBytes: z.coerce.number().int().positive().max(64 * 1024 * 1024),
   caption: optionalText(200),
   assertedPriceCents: z.coerce.number().int().min(0).max(1_000_000).optional(),
+  // Client-generated thumbnail / video poster.
+  thumbnailMimeType: z.string().min(3).max(100).optional(),
+  thumbnailSizeBytes: z.coerce.number().int().positive().max(4 * 1024 * 1024).optional(),
+  width: z.coerce.number().int().positive().max(20000).optional(),
+  height: z.coerce.number().int().positive().max(20000).optional(),
+  durationSeconds: z.coerce.number().positive().max(600).optional(),
 });
 
 export type UploadTicketInput = z.infer<typeof uploadTicketSchema>;

@@ -147,6 +147,22 @@ Routing bytes through the app would burn serverless bandwidth and hit Vercel's
 Everything enters `pending` and appears in `/admin` for review. **Rejecting
 deletes the file from storage**, not just from the listing.
 
+**Photos are stripped of EXIF before they leave the device.** Uploads go
+straight from the browser to storage, so the server never sees the bytes and
+could not strip anything itself. The client re-encodes each photo through a
+canvas, which drops GPS coordinates, timestamps and device identifiers — these
+files are served publicly, so this matters. EXIF orientation is applied to the
+pixels first so nothing comes out sideways, and an image that cannot be decoded
+is refused rather than uploaded raw.
+
+Video is **not** stripped: re-encoding it in the browser is too slow to do on
+upload, so containers may retain location data. The upload UI says so.
+
+A nightly cron (`/api/cron/sweep`, 04:00 UTC) deletes abandoned upload tickets
+and reconciles the bucket against the database to collect orphaned objects —
+bytes left behind when a client finished the PUT but never confirmed. Set
+`CRON_SECRET`; Vercel Cron sends it as a bearer token.
+
 #### Switching to Cloudflare R2 later
 
 R2 is the better long-term home for video: 10 GB free and, critically, **no

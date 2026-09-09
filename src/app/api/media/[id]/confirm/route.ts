@@ -8,10 +8,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const { id } = await context.params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return jsonError("Unknown upload", 404);
 
-  const body = (await readJson(request)) as { url?: unknown } | null;
+  const body = (await readJson(request)) as { url?: unknown; thumbnailUrl?: unknown } | null;
   const reportedUrl = typeof body?.url === "string" ? body.url : null;
+  const reportedThumb = typeof body?.thumbnailUrl === "string" ? body.thumbnailUrl : null;
 
-  const result = await confirmUpload(id, submitterHashFromRequest(request), reportedUrl);
+  const result = await confirmUpload(
+    id,
+    submitterHashFromRequest(request),
+    reportedUrl,
+    reportedThumb,
+  );
   if (!result.ok) {
     return result.reason === "untrusted_url"
       ? jsonError("That upload URL doesn't match what we issued.", 400)

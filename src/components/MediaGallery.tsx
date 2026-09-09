@@ -97,7 +97,9 @@ export function MediaGallery({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     className="h-28 w-40 rounded-lg bg-paper-sunk object-cover"
-                    src={item.url}
+                    // Thumbnail when we have one: the full image is up to
+                    // 1600px and this box is 160px wide.
+                    src={item.thumbnailUrl ?? item.url}
                     alt={
                       item.caption ??
                       (item.purpose === "price_evidence" || item.purpose === "menu"

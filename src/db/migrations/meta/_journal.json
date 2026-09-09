@@ -29,6 +29,13 @@
       "when": 1788912903019,
       "tag": "0003_media_public_url",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788993721827,
+      "tag": "0004_media_thumbnails",
+      "breakpoints": true
     }
   ]
 }

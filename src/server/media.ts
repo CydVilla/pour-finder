@@ -29,6 +29,8 @@ import {
 export interface UploadTicket {
   mediaId: string;
   uploadUrl: string;
+  /** Present when the client generated a thumbnail or video poster. */
+  thumbnailUploadUrl: string | null;
   publicUrl: string | null;
   expiresInSeconds: number;
   /** True when the client must report the resolved URL back on confirm. */
@@ -51,6 +53,11 @@ export async function createUploadTicket(input: {
   sizeBytes: number;
   caption?: string | null;
   assertedPriceCents?: number | null;
+  thumbnailMimeType?: string | null;
+  thumbnailSizeBytes?: number | null;
+  width?: number | null;
+  height?: number | null;
+  durationSeconds?: number | null;
   submitterHash: string;
 }): Promise<UploadTicket | UploadError> {
   if (!isStorageConfigured()) return { error: "storage_unconfigured" };
@@ -91,6 +98,20 @@ export async function createUploadTicket(input: {
   });
   if (!target) return { error: "storage_unconfigured" };
 
+  // A thumbnail is its own object, so it needs its own signature. Failing to
+  // produce one is not fatal: the gallery falls back to the full image.
+  let thumbKey: string | null = null;
+  let thumbTarget: Awaited<ReturnType<typeof presignUpload>> = null;
+  if (input.thumbnailMimeType && input.thumbnailSizeBytes && input.thumbnailSizeBytes > 0) {
+    thumbKey = `venues/${input.venueId}/thumb/${id}.${extensionFor(input.thumbnailMimeType)}`;
+    thumbTarget = await presignUpload({
+      key: thumbKey,
+      contentType: input.thumbnailMimeType,
+      contentLength: input.thumbnailSizeBytes,
+    });
+    if (!thumbTarget) thumbKey = null;
+  }
+
   await db.insert(media).values({
     id,
     venueId: input.venueId,
@@ -100,7 +121,15 @@ export async function createUploadTicket(input: {
     purpose: input.purpose,
     storageKey: key,
     publicUrl: target.publicUrl,
+    thumbnailKey: thumbKey,
+    thumbnailUrl: thumbTarget?.publicUrl ?? null,
     storageProvider: activeProvider(),
+    width: input.width ?? null,
+    height: input.height ?? null,
+    durationSeconds:
+      input.durationSeconds !== null && input.durationSeconds !== undefined
+        ? String(Math.round(input.durationSeconds * 100) / 100)
+        : null,
     mimeType: input.mimeType,
     sizeBytes: input.sizeBytes,
     caption: input.caption?.trim() || null,
@@ -114,6 +143,7 @@ export async function createUploadTicket(input: {
   return {
     mediaId: id,
     uploadUrl: target.uploadUrl,
+    thumbnailUploadUrl: thumbTarget?.uploadUrl ?? null,
     publicUrl: target.publicUrl,
     expiresInSeconds: target.expiresInSeconds,
     // Blob reveals the final URL only in the PUT response, so the client
@@ -127,6 +157,7 @@ export async function confirmUpload(
   mediaId: string,
   submitterHash: string,
   reportedUrl?: string | null,
+  reportedThumbnailUrl?: string | null,
 ): Promise<{ ok: boolean; status?: Media["status"]; reason?: "untrusted_url" }> {
   const [existing] = await db
     .select()
@@ -146,9 +177,18 @@ export async function confirmUpload(
     resolvedUrl = reportedUrl;
   }
 
+  // Thumbnails are best-effort: an untrusted or missing one is dropped rather
+  // than failing the upload, since the gallery can fall back to the full file.
+  let resolvedThumb = existing.thumbnailUrl;
+  if (!resolvedThumb && reportedThumbnailUrl && existing.thumbnailKey) {
+    resolvedThumb = isTrustedStorageUrl(reportedThumbnailUrl, existing.thumbnailKey)
+      ? reportedThumbnailUrl
+      : null;
+  }
+
   const [row] = await db
     .update(media)
-    .set({ uploadedAt: new Date(), publicUrl: resolvedUrl })
+    .set({ uploadedAt: new Date(), publicUrl: resolvedUrl, thumbnailUrl: resolvedThumb })
     .where(eq(media.id, mediaId))
     .returning();
 
@@ -253,8 +293,11 @@ export async function reviewMedia(
   // rejected uploads costs money and creates a liability for content we have
   // explicitly decided not to host.
   if (decision === "reject") {
-    await deleteObject(row.storageProvider === "r2" ? row.storageKey : (row.publicUrl ?? row.storageKey));
-    if (row.thumbnailKey) await deleteObject(row.thumbnailKey);
+    const onR2 = row.storageProvider === "r2";
+    await deleteObject(onR2 ? row.storageKey : (row.publicUrl ?? row.storageKey));
+    if (row.thumbnailKey) {
+      await deleteObject(onR2 ? row.thumbnailKey : (row.thumbnailUrl ?? row.thumbnailKey));
+    }
   }
   return true;
 }
@@ -284,7 +327,7 @@ function toDTO(row: Media): MediaDTO[] {
       kind: row.kind,
       purpose: row.purpose,
       url,
-      thumbnailUrl: null,
+      thumbnailUrl: row.thumbnailUrl,
       caption: row.caption,
       assertedPriceCents: row.assertedPriceCents,
       dealId: row.dealId,
