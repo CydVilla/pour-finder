@@ -96,7 +96,7 @@ export function MediaUploader({
       });
 
       const ticket = (await ticketResponse.json()) as
-        | { mediaId: string; uploadUrl: string }
+        | { mediaId: string; uploadUrl: string; reportUrl?: boolean }
         | { error: string };
 
       if (!ticketResponse.ok || "error" in ticket) {
@@ -106,10 +106,24 @@ export function MediaUploader({
       }
 
       setState("uploading");
-      await putWithProgress(ticket.uploadUrl, file, setProgress);
+      const uploadResponse = await putWithProgress(ticket.uploadUrl, file, setProgress);
+
+      // Vercel Blob returns the final URL in the PUT response; S3 does not
+      // need one because the URL is derivable from the key.
+      let resolvedUrl: string | null = null;
+      if (ticket.reportUrl) {
+        try {
+          const parsed = JSON.parse(uploadResponse) as { url?: string };
+          resolvedUrl = parsed.url ?? null;
+        } catch {
+          resolvedUrl = null;
+        }
+      }
 
       const confirmResponse = await fetch(`/api/media/${ticket.mediaId}/confirm`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: resolvedUrl }),
       });
       const confirmed = (await confirmResponse.json()) as { message?: string; error?: string };
 
@@ -218,7 +232,7 @@ function putWithProgress(
   url: string,
   file: File,
   onProgress: (percent: number) => void,
-): Promise<void> {
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
@@ -227,7 +241,9 @@ function putWithProgress(
       if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
     });
     xhr.addEventListener("load", () =>
-      xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`HTTP ${xhr.status}`)),
+      xhr.status >= 200 && xhr.status < 300
+        ? resolve(xhr.responseText)
+        : reject(new Error(`HTTP ${xhr.status}`)),
     );
     xhr.addEventListener("error", () => reject(new Error("network")));
     xhr.send(file);

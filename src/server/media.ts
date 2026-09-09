@@ -5,7 +5,13 @@ import { db } from "@/db";
 import { deals, media, venues, type Media, type MediaPurpose } from "@/db/schema";
 import { envBool } from "@/lib/env";
 import { MEDIA_LIMITS, extensionFor, kindForMimeType } from "@/lib/media-limits";
-import { isStorageConfigured, presignUpload, publicUrl, deleteObject } from "./storage";
+import {
+  activeProvider,
+  deleteObject,
+  isStorageConfigured,
+  isTrustedStorageUrl,
+  presignUpload,
+} from "./storage";
 
 /**
  * Photo and video uploads.
@@ -25,6 +31,8 @@ export interface UploadTicket {
   uploadUrl: string;
   publicUrl: string | null;
   expiresInSeconds: number;
+  /** True when the client must report the resolved URL back on confirm. */
+  reportUrl: boolean;
 }
 
 export type UploadError =
@@ -76,12 +84,12 @@ export async function createUploadTicket(input: {
   const id = randomUUID();
   const key = `venues/${input.venueId}/${kind}/${id}.${extensionFor(input.mimeType)}`;
 
-  const uploadUrl = await presignUpload({
+  const target = await presignUpload({
     key,
     contentType: input.mimeType,
     contentLength: input.sizeBytes,
   });
-  if (!uploadUrl) return { error: "storage_unconfigured" };
+  if (!target) return { error: "storage_unconfigured" };
 
   await db.insert(media).values({
     id,
@@ -91,6 +99,8 @@ export async function createUploadTicket(input: {
     kind,
     purpose: input.purpose,
     storageKey: key,
+    publicUrl: target.publicUrl,
+    storageProvider: activeProvider(),
     mimeType: input.mimeType,
     sizeBytes: input.sizeBytes,
     caption: input.caption?.trim() || null,
@@ -101,18 +111,45 @@ export async function createUploadTicket(input: {
     status: envBool("MEDIA_AUTO_APPROVE") ? "visible" : "pending",
   });
 
-  return { mediaId: id, uploadUrl, publicUrl: publicUrl(key), expiresInSeconds: 600 };
+  return {
+    mediaId: id,
+    uploadUrl: target.uploadUrl,
+    publicUrl: target.publicUrl,
+    expiresInSeconds: target.expiresInSeconds,
+    // Blob reveals the final URL only in the PUT response, so the client
+    // reports it back on confirm; it is validated before being stored.
+    reportUrl: target.publicUrl === null,
+  };
 }
 
 /** Called once the browser's PUT succeeds. Without this the row stays pending. */
 export async function confirmUpload(
   mediaId: string,
   submitterHash: string,
-): Promise<{ ok: boolean; status?: Media["status"] }> {
+  reportedUrl?: string | null,
+): Promise<{ ok: boolean; status?: Media["status"]; reason?: "untrusted_url" }> {
+  const [existing] = await db
+    .select()
+    .from(media)
+    .where(and(eq(media.id, mediaId), eq(media.submitterHash, submitterHash)))
+    .limit(1);
+  if (!existing) return { ok: false };
+
+  let resolvedUrl = existing.publicUrl;
+  if (!resolvedUrl) {
+    if (!reportedUrl) return { ok: false };
+    // The client supplies this, so it is untrusted until it matches the key we
+    // issued on a host we recognise.
+    if (!isTrustedStorageUrl(reportedUrl, existing.storageKey)) {
+      return { ok: false, reason: "untrusted_url" };
+    }
+    resolvedUrl = reportedUrl;
+  }
+
   const [row] = await db
     .update(media)
-    .set({ uploadedAt: new Date() })
-    .where(and(eq(media.id, mediaId), eq(media.submitterHash, submitterHash)))
+    .set({ uploadedAt: new Date(), publicUrl: resolvedUrl })
+    .where(eq(media.id, mediaId))
     .returning();
 
   return row ? { ok: true, status: row.status } : { ok: false };
@@ -216,7 +253,7 @@ export async function reviewMedia(
   // rejected uploads costs money and creates a liability for content we have
   // explicitly decided not to host.
   if (decision === "reject") {
-    await deleteObject(row.storageKey);
+    await deleteObject(row.storageProvider === "r2" ? row.storageKey : (row.publicUrl ?? row.storageKey));
     if (row.thumbnailKey) await deleteObject(row.thumbnailKey);
   }
   return true;
@@ -239,7 +276,7 @@ export async function priceEvidenceCount(dealId: string): Promise<number> {
 }
 
 function toDTO(row: Media): MediaDTO[] {
-  const url = publicUrl(row.storageKey);
+  const url = row.publicUrl;
   if (!url) return [];
   return [
     {
@@ -247,7 +284,7 @@ function toDTO(row: Media): MediaDTO[] {
       kind: row.kind,
       purpose: row.purpose,
       url,
-      thumbnailUrl: row.thumbnailKey ? publicUrl(row.thumbnailKey) : null,
+      thumbnailUrl: null,
       caption: row.caption,
       assertedPriceCents: row.assertedPriceCents,
       dealId: row.dealId,

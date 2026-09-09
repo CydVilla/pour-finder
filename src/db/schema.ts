@@ -745,6 +745,12 @@ export const media = pgTable(
 
     /** Object-storage key. Never a URL - the host may change. */
     storageKey: text("storage_key").notNull(),
+    /**
+     * Resolved public URL. Derivable from the key on S3, but Vercel Blob only
+     * reveals it in the upload response, so it is recorded on confirmation.
+     */
+    publicUrl: text("public_url"),
+    storageProvider: text("storage_provider"),
     /** Poster frame for video; a smaller variant for photos. */
     thumbnailKey: text("thumbnail_key"),
 
