@@ -9,6 +9,7 @@ import { formatCents, formatPricePerOunce } from "@/lib/money";
 import type { DealDTO, VenueDTO } from "@/lib/types";
 import { CommentsPanel } from "./CommentsPanel";
 import { MapLink } from "./MapLink";
+import { MediaGallery } from "./MediaGallery";
 import { DealRow } from "./DealRow";
 import { FreshnessBadge } from "./FreshnessBadge";
 import { PriceBlock } from "./PriceBlock";
@@ -177,7 +178,17 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
             />
           </div>
 
-          <div className="pf-perforation mt-3 pt-3">
+          <div className="pf-perforation mt-3 space-y-4 pt-3">
+            <MediaGallery
+              venueId={venue.id}
+              venueName={venue.name}
+              kind="photo"
+              title="Price evidence"
+              emptyPrompt="No photos yet — a shot of the menu proves this price better than any tap."
+              uploadLabel="📷 Add a photo of the price"
+              purpose="price_evidence"
+              dealId={headline.id}
+            />
             <CommentsPanel venue={venue} />
           </div>
 

@@ -201,3 +201,16 @@ export const commentSchema = z.object({
 });
 
 export type CommentInput = z.infer<typeof commentSchema>;
+
+/** Requesting a presigned upload. Size and type are re-checked server-side. */
+export const uploadTicketSchema = z.object({
+  venueId: z.string().uuid(),
+  dealId: z.string().uuid().optional(),
+  purpose: z.enum(["price_evidence", "menu", "pour", "venue"]).default("pour"),
+  mimeType: z.string().min(3).max(100),
+  sizeBytes: z.coerce.number().int().positive().max(64 * 1024 * 1024),
+  caption: optionalText(200),
+  assertedPriceCents: z.coerce.number().int().min(0).max(1_000_000).optional(),
+});
+
+export type UploadTicketInput = z.infer<typeof uploadTicketSchema>;

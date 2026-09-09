@@ -15,6 +15,13 @@
       "when": 1788621035298,
       "tag": "0001_comments_and_moderation",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788911847853,
+      "tag": "0002_media",
+      "breakpoints": true
     }
   ]
 }

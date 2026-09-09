@@ -180,6 +180,28 @@ export const moderationTaskStatusEnum = pgEnum("moderation_task_status", [
   "dismissed",
 ]);
 
+export const mediaKindEnum = pgEnum("media_kind", ["photo", "video"]);
+
+/**
+ * What the upload is *for*. Price evidence is the load-bearing one: a photo of
+ * the menu or the receipt is the strongest verification signal the site can
+ * have, far stronger than a tap, so it feeds the confidence model differently
+ * from a nice photo of a pint.
+ */
+export const mediaPurposeEnum = pgEnum("media_purpose", [
+  "price_evidence",
+  "menu",
+  "pour",
+  "venue",
+]);
+
+export const mediaStatusEnum = pgEnum("media_status", [
+  "pending",
+  "visible",
+  "rejected",
+  "removed",
+]);
+
 export const placeKindEnum = pgEnum("place_kind", [
   "state",
   "city",
@@ -696,6 +718,69 @@ export const moderationTasks = pgTable(
   ],
 );
 
+/**
+ * User-uploaded photos and videos.
+ *
+ * Bytes live in object storage (R2 by default); this table holds only keys and
+ * metadata, so the storage backend can change without a data migration.
+ *
+ * Everything starts `pending`. This is an alcohol-focused site accepting
+ * anonymous uploads — publishing unreviewed images would be reckless, and the
+ * moderation queue already exists.
+ */
+export const media = pgTable(
+  "media",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    venueId: uuid("venue_id")
+      .notNull()
+      .references(() => venues.id, { onDelete: "cascade" }),
+    /** Set when the upload evidences a specific price. */
+    dealId: uuid("deal_id").references(() => deals.id, { onDelete: "set null" }),
+    commentId: uuid("comment_id").references(() => comments.id, { onDelete: "set null" }),
+
+    kind: mediaKindEnum("kind").notNull(),
+    purpose: mediaPurposeEnum("purpose").notNull().default("pour"),
+
+    /** Object-storage key. Never a URL - the host may change. */
+    storageKey: text("storage_key").notNull(),
+    /** Poster frame for video; a smaller variant for photos. */
+    thumbnailKey: text("thumbnail_key"),
+
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    /** Video only. */
+    durationSeconds: numeric("duration_seconds", { precision: 6, scale: 2 }),
+
+    caption: text("caption"),
+    /** Price the uploader says the photo shows, for one-tap moderator checks. */
+    assertedPriceCents: integer("asserted_price_cents"),
+
+    submitterHash: text("submitter_hash").notNull(),
+    userId: uuid("user_id"),
+
+    status: mediaStatusEnum("status").notNull().default("pending"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewedBy: text("reviewed_by"),
+    reviewNote: text("review_note"),
+
+    /** Set once the client confirms the direct-to-storage upload finished. */
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true }),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("media_venue_idx").on(t.venueId, t.status, t.createdAt),
+    index("media_deal_idx").on(t.dealId, t.status),
+    index("media_status_idx").on(t.status, t.createdAt),
+    index("media_submitter_idx").on(t.submitterHash, t.createdAt),
+    uniqueIndex("media_storage_key_key").on(t.storageKey),
+  ],
+);
+
 /* ------------------------------------------------------------------ types */
 
 export type Venue = typeof venues.$inferSelect;
@@ -712,6 +797,8 @@ export type Place = typeof places.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
 export type ModerationTask = typeof moderationTasks.$inferSelect;
+export type Media = typeof media.$inferSelect;
+export type NewMedia = typeof media.$inferInsert;
 export type NewModerationTask = typeof moderationTasks.$inferInsert;
 export type NewPlace = typeof places.$inferInsert;
 
@@ -728,4 +815,7 @@ export type GeoPrecision = (typeof geoPrecisionEnum.enumValues)[number];
 export type CommentSignal = (typeof commentSignalEnum.enumValues)[number];
 export type CommentStatus = (typeof commentStatusEnum.enumValues)[number];
 export type ModerationTaskKind = (typeof moderationTaskKindEnum.enumValues)[number];
+export type MediaKind = (typeof mediaKindEnum.enumValues)[number];
+export type MediaPurpose = (typeof mediaPurposeEnum.enumValues)[number];
+export type MediaStatus = (typeof mediaStatusEnum.enumValues)[number];
 export type ModerationTaskStatus = (typeof moderationTaskStatusEnum.enumValues)[number];

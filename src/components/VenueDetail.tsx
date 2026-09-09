@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CommentsPanel } from "./CommentsPanel";
 import { DealRow } from "./DealRow";
 import { MapLink } from "./MapLink";
+import { MediaGallery } from "./MediaGallery";
 import { ReportSheet } from "./ReportSheet";
 import type { DealDTO, VenueDTO } from "@/lib/types";
 
@@ -123,7 +124,27 @@ export function VenueDetail({ venue: initial }: { venue: VenueDTO }) {
             </details>
           )}
 
-          <div className="pf-perforation mt-5 pt-5">
+          <div className="pf-perforation mt-5 space-y-6 pt-5">
+            <MediaGallery
+              venueId={venue.id}
+              venueName={venue.name}
+              kind="photo"
+              title="Price evidence"
+              emptyPrompt="No photos yet. A shot of the menu or the board settles any argument about a price."
+              uploadLabel="📷 Add a photo of the price"
+              purpose="price_evidence"
+            />
+
+            <MediaGallery
+              venueId={venue.id}
+              venueName={venue.name}
+              kind="video"
+              title="Pours"
+              emptyPrompt="No clips yet. Share a short video of your pint here."
+              uploadLabel="🎥 Share a pour"
+              purpose="pour"
+            />
+
             <CommentsPanel venue={venue} />
           </div>
         </div>

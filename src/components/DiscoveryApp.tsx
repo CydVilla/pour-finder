@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { milesToMeters, type BoundingBox } from "@/lib/geo-math";
 import {
   countSecondaryFilters,
@@ -12,6 +12,7 @@ import {
 import { useDealSearch } from "@/lib/use-deal-search";
 import { useGeolocation } from "@/lib/use-geolocation";
 import type { DealDTO, DealSearchResponse, VenueDTO } from "@/lib/types";
+import { AdSlot } from "./AdSlot";
 import { AddDealSheet } from "./AddDealSheet";
 import { EmptyState } from "./EmptyState";
 import { FilterBar } from "./FilterBar";
@@ -225,15 +226,19 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
           />
         ) : (
           <>
-            {venues.map((venue) => (
-              <VenueCard
-                key={venue.id}
-                venue={venue}
-                isSelected={venue.id === selectedVenueId}
-                onSelect={selectVenue}
-                onVerified={patchDeal}
-                onReport={(deal, v) => setReportTarget({ deal, venue: v })}
-              />
+            {venues.map((venue, index) => (
+              <Fragment key={venue.id}>
+                <VenueCard
+                  venue={venue}
+                  isSelected={venue.id === selectedVenueId}
+                  onSelect={selectVenue}
+                  onVerified={patchDeal}
+                  onReport={(deal, v) => setReportTarget({ deal, venue: v })}
+                />
+                {/* Between cards, never inside one, and never above the
+                    cheapest result — the first few are why people came. */}
+                {index === 4 && <AdSlot slot="list-inline" height={250} />}
+              </Fragment>
             ))}
 
             {data.truncated && (

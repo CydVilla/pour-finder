@@ -25,6 +25,8 @@ export const RATE_LIMITS = {
   report: { limit: 8, windowSeconds: 3600 },
   /** Comments are cheap to write and expensive to moderate. */
   comment: { limit: 12, windowSeconds: 3600 },
+  /** Uploads cost storage and moderator attention; keep the tap tight. */
+  upload: { limit: 15, windowSeconds: 3600 },
 } as const satisfies Record<string, RateLimitPolicy>;
 
 export interface RateLimitResult {
