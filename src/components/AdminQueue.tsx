@@ -21,12 +21,25 @@ interface TaskRow {
   createdAt: string;
 }
 
+interface MediaRow {
+  id: string;
+  kind: "photo" | "video";
+  purpose: string;
+  url: string;
+  caption: string | null;
+  assertedPriceCents: number | null;
+  venueId: string;
+  createdAt: string;
+}
+
 export function AdminQueue({
   submissions,
   tasks,
+  media = [],
 }: {
   submissions: SubmissionRow[];
   tasks: TaskRow[];
+  media?: MediaRow[];
 }) {
   const [handled, setHandled] = useState<Record<string, string>>({});
 
@@ -93,6 +106,62 @@ export function AdminQueue({
                   {handled[task.id] && (
                     <span className="text-sm font-semibold text-fresh">{handled[task.id]}</span>
                   )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-xs font-bold uppercase tracking-wide text-ink-faint">
+          Photos &amp; video awaiting review ({media.length})
+        </h2>
+        <p className="mt-1 text-xs text-ink-soft">
+          Rejecting deletes the file from storage permanently.
+        </p>
+        {media.length === 0 ? (
+          <p className="mt-2 text-sm text-ink-soft">Nothing waiting.</p>
+        ) : (
+          <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {media.map((item) => (
+              <li key={item.id} className="pf-card overflow-hidden">
+                {item.kind === "video" ? (
+                  <video src={item.url} controls playsInline preload="metadata" className="h-44 w-full bg-paper-sunk object-contain" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.url} alt="Awaiting moderation" className="h-44 w-full bg-paper-sunk object-contain" />
+                )}
+                <div className="p-3">
+                  <p className="text-xs text-ink-soft">
+                    {item.purpose.replace(/_/g, " ")}
+                    {item.assertedPriceCents !== null && (
+                      <span className="font-semibold text-ink">
+                        {" "}
+                        · claims ${(item.assertedPriceCents / 100).toFixed(2)}
+                      </span>
+                    )}
+                  </p>
+                  {item.caption && <p className="mt-1 text-sm">{item.caption}</p>}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="pf-button pf-button-primary px-3 py-1.5 text-sm"
+                      onClick={() => act(`/api/admin/media/${item.id}`, { decision: "approve" }, item.id, "published")}
+                    >
+                      Publish
+                    </button>
+                    <button
+                      type="button"
+                      className="pf-button pf-button-quiet px-3 py-1.5 text-sm"
+                      onClick={() => act(`/api/admin/media/${item.id}`, { decision: "reject" }, item.id, "deleted")}
+                    >
+                      Reject &amp; delete
+                    </button>
+                    {handled[item.id] && (
+                      <span className="text-sm font-semibold text-fresh">{handled[item.id]}</span>
+                    )}
+                  </div>
                 </div>
               </li>
             ))}

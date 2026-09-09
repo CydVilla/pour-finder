@@ -5,6 +5,7 @@ import { moderationTasks } from "@/db/schema";
 import { AdminQueue } from "@/components/AdminQueue";
 import { AdminLogin } from "@/components/AdminLogin";
 import { adminTokenConfigured, isAdmin } from "@/server/admin";
+import { listPendingMedia } from "@/server/media";
 import { listPendingSubmissions } from "@/server/submissions";
 
 /**
@@ -30,7 +31,7 @@ export default async function AdminPage() {
 
   if (!(await isAdmin())) return <AdminLogin />;
 
-  const [submissions, tasks] = await Promise.all([
+  const [submissions, tasks, pendingMedia] = await Promise.all([
     listPendingSubmissions(50),
     db
       .select()
@@ -38,6 +39,7 @@ export default async function AdminPage() {
       .where(inArray(moderationTasks.status, ["open", "in_progress"]))
       .orderBy(desc(moderationTasks.createdAt))
       .limit(50),
+    listPendingMedia(50),
   ]);
 
   return (
@@ -52,6 +54,7 @@ export default async function AdminPage() {
           possibleDuplicateOf: s.possibleDuplicateOf,
           sourceUrl: s.sourceUrl,
         }))}
+        media={pendingMedia}
         tasks={tasks.map((t) => ({
           id: t.id,
           kind: t.kind,

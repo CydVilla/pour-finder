@@ -30,9 +30,17 @@ Running list. Newest thinking at the top of each section.
 ## Next up
 
 ### Data quality
-- [ ] **Menu photo uploads.** `submissions.evidenceImageKeys` exists but nothing
-      writes to it. Cloudflare R2 is the cheapest fit (10GB free, no egress
-      fees). Needs a signed-upload endpoint and an image moderation policy.
+- [x] ~~Menu photo uploads~~ — shipped, backed by Vercel Blob with R2 supported
+      as an alternative. Direct presigned PUT, moderation queue, reject deletes.
+- [ ] **Server-side thumbnails.** `media.thumbnail_key` exists and is always
+      null. Full-size photos are served to the card carousel today, which is
+      wasteful on mobile data. Video has no poster frame at all.
+- [ ] **Strip EXIF from uploads.** Phone photos can carry GPS coordinates and
+      timestamps. Nothing currently removes them, and the files are public.
+- [ ] **Sweep abandoned uploads.** Rows with `uploaded_at IS NULL` older than a
+      day are tickets nobody completed; they cost nothing but should be pruned.
+- [ ] **Move to R2 when video volume grows.** Blob's free tier is ~1 GB with
+      metered egress; R2 is 10 GB with none. See docs/SETUP.md.
 - [ ] **Backfill real coordinates** for the venues currently marked
       `geoPrecision: approximate` (J.J. Donovan's, A&B Kitchen, Eddie C's).
 - [ ] **Timezone lookup by shapefile.** `src/lib/timezone.ts` disambiguates
