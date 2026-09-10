@@ -597,14 +597,20 @@ function VenuePicker({
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<VenueSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  /** Distinguishes "haven't searched" from "searched and found nothing". */
+  const [searchedFor, setSearchedFor] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
-    const params = new URLSearchParams({ q: query });
+    const trimmed = query.trim();
+    const params = new URLSearchParams({ q: trimmed });
     if (userLocation) {
       params.set("lat", String(userLocation.lat));
       params.set("lng", String(userLocation.lng));
     }
+
+    if (trimmed.length >= 2) setSearching(true);
 
     const timer = window.setTimeout(async () => {
       try {
@@ -612,8 +618,11 @@ function VenuePicker({
         if (!response.ok) return;
         const data = (await response.json()) as { venues: VenueSearchResult[] };
         setResults(data.venues);
+        setSearchedFor(trimmed);
       } catch {
         /* aborted */
+      } finally {
+        setSearching(false);
       }
     }, 200);
 
@@ -622,6 +631,12 @@ function VenuePicker({
       window.clearTimeout(timer);
     };
   }, [query, userLocation]);
+
+  const trimmed = query.trim();
+  // Only a completed search for the text currently in the box counts as "no
+  // matches" — otherwise the message flashes while the user is still typing.
+  const noMatches =
+    trimmed.length >= 2 && !searching && searchedFor === trimmed && results.length === 0;
 
   return (
     <div className="space-y-2">
@@ -659,13 +674,43 @@ function VenuePicker({
         </ul>
       )}
 
-      <button
-        type="button"
-        onClick={() => onCreateNew(query.trim())}
-        className={clsx("text-sm underline underline-offset-2", "text-ink-soft hover:text-ink")}
-      >
-        Can&apos;t find it? Add a new bar
-      </button>
+      {searching && trimmed.length >= 2 && (
+        <p className="text-xs text-ink-faint">Searching…</p>
+      )}
+
+      {/*
+        Only fifteen venues are seeded, so a search for almost any real bar
+        finds nothing. Previously that produced complete silence — no message,
+        no prompt — and the only way forward was a small text link that looked
+        identical before and after searching. People reasonably concluded the
+        form was broken. A dead end for the common case is the worst possible
+        place to be quiet.
+      */}
+      {noMatches ? (
+        <div className="rounded-lg border-[1.5px] border-dashed border-rule-strong bg-paper-sunk p-3">
+          <p className="text-sm text-ink">
+            No bars here matching <span className="font-semibold">&ldquo;{trimmed}&rdquo;</span> yet.
+          </p>
+          <p className="mt-0.5 text-xs text-ink-soft">
+            Most places aren&apos;t listed yet — adding it takes a few seconds.
+          </p>
+          <button
+            type="button"
+            onClick={() => onCreateNew(trimmed)}
+            className="pf-button pf-button-amber mt-2.5 w-full px-4 py-2.5 text-sm"
+          >
+            ＋ Add &ldquo;{trimmed}&rdquo;
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onCreateNew(trimmed)}
+          className={clsx("text-sm underline underline-offset-2", "text-ink-soft hover:text-ink")}
+        >
+          Can&apos;t find it? Add a new bar
+        </button>
+      )}
     </div>
   );
 }
