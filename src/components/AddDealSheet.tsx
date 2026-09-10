@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { servingTypeEnum, venueTypeEnum } from "@/db/schema";
 import type { GeocodeResult } from "@/lib/geocode/types";
 import { SERVING_TYPE_LABEL } from "@/lib/format";
@@ -43,6 +43,12 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Which required field the user still has to fill, once they've tried. */
+  const [missing, setMissing] = useState<"venue" | "beer" | "price" | null>(null);
+
+  const venueRef = useRef<HTMLDivElement>(null);
+  const beerRef = useRef<HTMLInputElement>(null);
+  const priceRef = useRef<HTMLInputElement>(null);
 
   const [beerName, setBeerName] = useState("");
   const [price, setPrice] = useState("");
@@ -97,13 +103,44 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
 
   const priceCents = parseDollarsToCents(price);
   const hasVenue = Boolean(venue) || (creatingVenue && newVenue.name.trim() && newVenue.city.trim());
-  const canSubmit = Boolean(hasVenue && beerName.trim() && priceCents !== null && !submitting);
+
+  /**
+   * Returns the first thing still missing, or null.
+   *
+   * The submit button used to be `disabled` until all three were filled. On a
+   * phone the required fields are scrolled well above the button, so the
+   * button was simply dead with nothing on screen explaining why — which is
+   * exactly how a contributor gives up. Now the button always works and tells
+   * you what's missing, then takes you to it.
+   */
+  const firstMissing = (): "venue" | "beer" | "price" | null => {
+    if (!hasVenue) return "venue";
+    if (!beerName.trim()) return "beer";
+    if (priceCents === null) return "price";
+    return null;
+  };
+
+  const MISSING_MESSAGE = {
+    venue: "Pick the bar first — search for it, or add it if it's not listed.",
+    beer: "Which beer is it? Even just \u201cdraft\u201d or \u201cPBR\u201d helps.",
+    price: "Add the price, like 3 or 3.50.",
+  } as const;
 
   const submit = async () => {
-    if (priceCents === null) {
-      setError("Enter a price like 3 or 3.50");
+    const gap = firstMissing();
+    if (gap) {
+      setMissing(gap);
+      setError(MISSING_MESSAGE[gap]);
+      // Take them to the field rather than leaving them to hunt for it.
+      const target =
+        gap === "venue" ? venueRef.current : gap === "beer" ? beerRef.current : priceRef.current;
+      target?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
+      if (target instanceof HTMLInputElement) window.setTimeout(() => target.focus(), 250);
       return;
     }
+
+    if (priceCents === null) return;
+    setMissing(null);
     setSubmitting(true);
     setError(null);
 
@@ -206,13 +243,15 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
             <button
               type="button"
               onClick={submit}
-              disabled={!canSubmit}
+              disabled={submitting}
               className="pf-button pf-button-amber w-full px-4 py-3"
             >
               {submitting ? "Sending…" : "Submit deal"}
             </button>
             <p className="text-center text-xs text-ink-faint">
-              No account needed. A moderator checks new deals before they go live.
+              {firstMissing()
+                ? "Needs a bar, a beer and a price."
+                : "No account needed. A moderator checks new deals before they go live."}
             </p>
           </div>
         )
@@ -237,7 +276,7 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
         </div>
       ) : (
         <div className="space-y-5">
-          <Field label="Where?" required>
+          <Field label="Where?" required error={missing === "venue"} ref={venueRef}>
             {venue ? (
               <div className="flex items-center justify-between gap-2 rounded-lg border-[1.5px] border-ink bg-card px-3 py-2.5">
                 <span className="truncate font-semibold">{venue.name}</span>
@@ -293,7 +332,11 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
             ) : (
               <VenuePicker
                 userLocation={userLocation}
-                onPick={setVenue}
+                onPick={(picked) => {
+                  setVenue(picked);
+                  setMissing(null);
+                  setError(null);
+                }}
                 onCreateNew={(name) => {
                   setNewVenue((v) => ({ ...v, name }));
                   setCreatingVenue(true);
@@ -302,17 +345,22 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
             )}
           </Field>
 
-          <Field label="What beer?" required>
+          <Field label="What beer?" required error={missing === "beer"}>
             <input
+              ref={beerRef}
               className="pf-input"
               placeholder="Bud Light, PBR, Narragansett…"
               aria-label="Beer name"
+              aria-invalid={missing === "beer" || undefined}
               value={beerName}
-              onChange={(event) => setBeerName(event.target.value)}
+              onChange={(event) => {
+                setBeerName(event.target.value);
+                if (missing === "beer") setMissing(null);
+              }}
             />
           </Field>
 
-          <Field label="How much?" required>
+          <Field label="How much?" required error={missing === "price"}>
             {/*
               A <select> will not shrink below the intrinsic width of its
               widest option, and flex items default to min-width:auto — so
@@ -329,12 +377,17 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
                   $
                 </span>
                 <input
+                  ref={priceRef}
                   className="pf-input h-full pl-7 text-lg font-bold tabular-nums"
                   inputMode="decimal"
                   placeholder="3.00"
                   aria-label="Price in dollars"
+                  aria-invalid={missing === "price" || undefined}
                   value={price}
-                  onChange={(event) => setPrice(event.target.value)}
+                  onChange={(event) => {
+                    setPrice(event.target.value);
+                    if (missing === "price") setMissing(null);
+                  }}
                 />
               </div>
               <select
@@ -411,6 +464,15 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
                   It&apos;s a happy hour / limited-time deal
                 </label>
 
+                {/*
+                  No days selected already means "every day" — that is what an
+                  empty schedule denotes in the data model. Without saying so,
+                  people tap all seven circles to express it, which is fiddly on
+                  a phone and stores seven rows that mean the same as none.
+                */}
+                <p className="pb-1.5 text-xs text-ink-soft">
+                  Only if it&apos;s limited to certain days — leave blank for every day.
+                </p>
                 <div className="flex flex-wrap gap-1.5" role="group" aria-label="Days available">
                   {DAYS.map((day) => (
                     <button
@@ -429,6 +491,15 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
                       {day.label}
                     </button>
                   ))}
+                  {days.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setDays([])}
+                      className="pf-chip min-h-9 px-3 py-1.5 text-xs"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-2 flex items-center gap-2">
@@ -481,20 +552,31 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
 
 /* -------------------------------------------------------------- pieces */
 
-function Field({
-  label,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
+const Field = forwardRef<
+  HTMLDivElement,
+  {
+    label: string;
+    hint?: string;
+    required?: boolean;
+    /** Highlights the field after a submit attempt found it empty. */
+    error?: boolean;
+    children: React.ReactNode;
+  }
+>(function Field({ label, hint, required, error, children }, ref) {
   return (
-    <div className="space-y-1.5">
-      <p className="text-xs font-bold uppercase tracking-wide text-ink-faint">
+    <div
+      ref={ref}
+      className={clsx(
+        "scroll-mt-4 space-y-1.5",
+        error && "-mx-2 rounded-lg bg-outdated-wash/60 px-2 py-2",
+      )}
+    >
+      <p
+        className={clsx(
+          "text-xs font-bold uppercase tracking-wide",
+          error ? "text-outdated" : "text-ink-faint",
+        )}
+      >
         {label}
         {required && <span className="ml-1 text-amber-deep">*</span>}
       </p>
@@ -502,7 +584,7 @@ function Field({
       {children}
     </div>
   );
-}
+});
 
 function VenuePicker({
   userLocation,
@@ -598,4 +680,10 @@ async function geocodeCity(city: string, state: string): Promise<{ lat: number; 
   } catch {
     return null;
   }
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
 }

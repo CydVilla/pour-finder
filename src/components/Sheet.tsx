@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 interface Props {
   open: boolean;
@@ -36,6 +36,49 @@ export function Sheet({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const [availableHeight, setAvailableHeight] = useState<number | null>(null);
+
+  /**
+   * Size to the *visual* viewport, not `dvh`.
+   *
+   * `dvh` accounts for browser chrome but not the on-screen keyboard. On a
+   * phone, focusing an input shrinks the visible area by roughly half while a
+   * `max-h-[92dvh]` panel keeps its full height — so the footer, and with it
+   * the submit button, ends up below the keyboard where it cannot be reached.
+   * visualViewport is the only thing that reports the real space.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const sync = () => setAvailableHeight(vv.height);
+    sync();
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      vv.removeEventListener("scroll", sync);
+      setAvailableHeight(null);
+    };
+  }, [open]);
+
+  /** Keep the focused control above the keyboard as the user tabs through. */
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      // Wait for the keyboard animation before measuring.
+      window.setTimeout(() => target.scrollIntoView({ block: "nearest" }), 300);
+    };
+
+    panel.addEventListener("focusin", onFocusIn);
+    return () => panel.removeEventListener("focusin", onFocusIn);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -110,10 +153,14 @@ export function Sheet({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={clsx(
-          "pf-sheet-in relative flex max-h-[92dvh] w-full flex-col bg-paper shadow-lift outline-none",
+          "pf-sheet-in relative flex w-full flex-col bg-paper shadow-lift outline-none",
           "rounded-t-2xl sm:rounded-2xl",
           size === "lg" ? "sm:max-w-2xl" : "sm:max-w-lg",
         )}
+        style={{
+          // 92% of whatever is genuinely visible, keyboard included.
+          maxHeight: availableHeight ? `${Math.round(availableHeight * 0.92)}px` : "92dvh",
+        }}
       >
         <header className="flex items-center justify-between gap-3 border-b border-rule px-4 py-3 sm:px-5">
           <h2 id={titleId} className={clsx("wordmark text-lg", hideTitle && "sr-only")}>
@@ -129,7 +176,14 @@ export function Sheet({
           </button>
         </header>
 
-        <div className="pf-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">{children}</div>
+        {/*
+          `basis-0` with a minimum keeps the content area from being squeezed
+          to a few pixels by the header and footer when the viewport is short —
+          which is exactly what a keyboard does.
+        */}
+        <div className="pf-scroll min-h-[8rem] flex-1 basis-0 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+          {children}
+        </div>
 
         {footer && (
           <footer className="border-t border-rule bg-paper px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
