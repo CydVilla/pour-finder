@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { desc, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { moderationTasks } from "@/db/schema";
+import { AdminActivity } from "@/components/AdminActivity";
 import { AdminQueue } from "@/components/AdminQueue";
 import { AdminLogin } from "@/components/AdminLogin";
 import { adminTokenConfigured, isAdmin } from "@/server/admin";
@@ -45,6 +46,12 @@ export default async function AdminPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="wordmark text-2xl">Moderation</h1>
+
+      {/* Auto-approve means review happens after publication, so the activity
+          feed is the primary surface, not the queue. */}
+      <div className="mt-6">
+        <AdminActivity />
+      </div>
       <AdminQueue
         submissions={submissions.map((s) => ({
           id: s.id,
