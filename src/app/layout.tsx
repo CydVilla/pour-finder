@@ -39,11 +39,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="flex min-h-dvh flex-col">
-        <a href="#results" className="skip-link">
-          Skip to results
+        {/*
+          Anchored here rather than on a per-page element: the previous target
+          (#results) existed only on the homepage, so the skip link was a dead
+          jump on every city, venue and price page.
+        */}
+        <a href="#main-content" className="skip-link">
+          Skip to content
         </a>
         <AgeNotice />
-        <div className="min-h-0 flex-1">{children}</div>
+        <div id="main-content" className="min-h-0 flex-1">{children}</div>
       </body>
     </html>
   );

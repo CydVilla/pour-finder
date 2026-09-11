@@ -274,6 +274,16 @@ select.pf-control,
   outline-offset: -3px;
 }
 
+/* MapLibre ships 29px controls. This app is used one-handed, outdoors, often
+   while walking — zoom and locate need a real thumb target. */
+.maplibregl-ctrl-group button {
+  width: 40px;
+  height: 40px;
+}
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  background-size: 20px 20px;
+}
+
 /* --------------------------------------------------------------- motion */
 
 @keyframes pf-sheet-in {

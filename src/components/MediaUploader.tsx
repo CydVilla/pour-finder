@@ -246,6 +246,9 @@ export function MediaUploader({
         ref={inputRef}
         type="file"
         accept={acceptAttr}
+        // Visually hidden but still in the accessibility tree, so it needs a
+        // name of its own — the visible trigger is a separate button.
+        aria-label={label}
         className="sr-only"
         onChange={(event) => {
           const file = event.target.files?.[0];

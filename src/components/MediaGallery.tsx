@@ -76,7 +76,7 @@ export function MediaGallery({
 
   return (
     <section className="space-y-2">
-      <h4 className="text-xs font-bold uppercase tracking-wide text-ink-faint">{title}</h4>
+      <h3 className="text-xs font-bold uppercase tracking-wide text-ink-faint">{title}</h3>
 
       {items.length > 0 && (
         <ul className="pf-scroll-x flex gap-2 pb-1">

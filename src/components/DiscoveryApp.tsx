@@ -389,7 +389,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
                 if (view === "map") setFitNonce((n) => n + 1);
               }}
               className={clsx(
-                "min-w-[86px] rounded-full px-4 py-2 text-sm font-bold transition-colors",
+                "min-h-11 min-w-[86px] rounded-full px-4 py-2.5 text-sm font-bold transition-colors",
                 mobileView === view ? "bg-ink text-paper" : "text-ink",
               )}
             >

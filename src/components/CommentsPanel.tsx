@@ -113,9 +113,9 @@ export function CommentsPanel({ venue, deal }: Props) {
 
   return (
     <section className="space-y-3">
-      <h4 className="text-xs font-bold uppercase tracking-wide text-ink-faint">
+      <h3 className="text-xs font-bold uppercase tracking-wide text-ink-faint">
         {deal ? "Comments on this deal" : "Comments"}
-      </h4>
+      </h3>
 
       <div className="space-y-2">
         <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="What's the status?">

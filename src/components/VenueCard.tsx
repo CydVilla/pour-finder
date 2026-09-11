@@ -80,9 +80,14 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <h3 className="wordmark min-w-0 truncate text-[1.05rem] leading-snug text-ink">
+              {/*
+                -my-1.5/py-1.5 grows the tap area without moving anything: a
+                17px inline target is easy to miss on a phone, and a miss here
+                lands on the card behind it instead of opening the venue.
+              */}
               <Link
                 href={`/venue/${venue.slug}`}
-                className="pointer-events-auto hover:underline hover:decoration-rule-strong hover:underline-offset-4"
+                className="pointer-events-auto -my-1.5 inline-block py-1.5 hover:underline hover:decoration-rule-strong hover:underline-offset-4"
               >
                 {venue.name}
               </Link>
