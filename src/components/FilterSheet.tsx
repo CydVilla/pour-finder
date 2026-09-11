@@ -21,6 +21,8 @@ interface Props {
   onChange: (patch: Partial<DealFilters>) => void;
   onClear: () => void;
   resultCount: number;
+  /** While true the count belongs to the previous filters, so don't show it. */
+  isLoading?: boolean;
 }
 
 /** Everything secondary, in one sheet, grouped the way people think about it. */
@@ -33,6 +35,7 @@ export function FilterSheet({
   onChange,
   onClear,
   resultCount,
+  isLoading = false,
 }: Props) {
   const toggleServing = (value: (typeof servingTypeEnum.enumValues)[number]) => {
     const next = filters.servingTypes.includes(value)
@@ -65,7 +68,13 @@ export function FilterSheet({
             Clear all
           </button>
           <button type="button" onClick={onClose} className="pf-button pf-button-primary flex-[2] px-4 py-3">
-            Show {resultCount} {resultCount === 1 ? "place" : "places"}
+            {/*
+              Showing the previous filters' count while a new query is in
+              flight means the button states a number that is simply wrong for
+              up to a few seconds — it read "Show 13 places" when the answer
+              was 0. Better to say nothing than to assert stale data.
+            */}
+            {isLoading ? "Updating…" : `Show ${resultCount} ${resultCount === 1 ? "place" : "places"}`}
           </button>
         </div>
       }

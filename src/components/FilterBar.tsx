@@ -8,6 +8,7 @@ interface Props {
   filters: DealFilters;
   secondaryCount: number;
   resultCount: number;
+  isLoading?: boolean;
   hasOrigin: boolean;
   onMaxPrice: (cents: number | undefined) => void;
   onSort: (sort: SortId) => void;
@@ -23,6 +24,7 @@ export function FilterBar({
   filters,
   secondaryCount,
   resultCount,
+  isLoading = false,
   hasOrigin,
   onMaxPrice,
   onSort,
@@ -81,8 +83,14 @@ export function FilterBar({
 
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-ink-soft" role="status" aria-live="polite">
-            <span className="font-bold text-ink tabular-nums">{resultCount}</span>{" "}
-            {resultCount === 1 ? "place" : "places"}
+            {isLoading ? (
+              <span className="text-ink-faint">Updating…</span>
+            ) : (
+              <>
+                <span className="font-bold text-ink tabular-nums">{resultCount}</span>{" "}
+                {resultCount === 1 ? "place" : "places"}
+              </>
+            )}
           </p>
 
           <label className="flex items-center gap-1.5 text-xs text-ink-soft">

@@ -325,6 +325,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
         filters={filters}
         secondaryCount={secondaryCount}
         resultCount={data.total}
+        isLoading={isLoading}
         hasOrigin={hasOrigin}
         onMaxPrice={(cents) => update({ maxPriceCents: cents })}
         onSort={(sort) => update({ sort })}
@@ -407,6 +408,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
         onChange={update}
         onClear={clearFilters}
         resultCount={data.total}
+        isLoading={isLoading}
       />
 
       <AddDealSheet
