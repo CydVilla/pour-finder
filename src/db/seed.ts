@@ -15,6 +15,7 @@ import { closeDb, db } from "./index";
 import {
   dealRevisions,
   dealSchedules,
+  dealVerifications,
   deals,
   places,
   venueRevisions,
@@ -180,6 +181,37 @@ async function insertDeal(tx: Tx, venueId: string, seed: SeedDeal): Promise<void
 
   const [deal] = await tx.insert(deals).values(values).returning();
   if (!deal) throw new Error(`Failed to insert deal ${seed.beerName}`);
+
+  /*
+   * Back the confirmation count with real rows.
+   *
+   * `verificationCount` is denormalized, and verification.ts recomputes it
+   * from deal_verifications on every vote. Writing the counter without the
+   * rows meant the first genuine confirmation RESET it — a deal showing
+   * "4 confirmations" dropped to 1 the moment somebody agreed with it, which
+   * is both wrong and the exact opposite of the feedback the tap should give.
+   *
+   * Each row carries a distinct synthetic submitter (the unique index is
+   * per-person-per-day) and the deal's current price, so it counts toward the
+   * price actually on display.
+   */
+  const seededVotes = seed.verificationCount ?? 0;
+  if (seededVotes > 0 && verifiedAt) {
+    for (let i = 0; i < seededVotes; i += 1) {
+      // Spread them over the days before the verification date so the history
+      // reads like independent visits rather than one batch.
+      const votedAt = new Date(verifiedAt.getTime() - i * 86_400_000);
+      await tx.insert(dealVerifications).values({
+        dealId: deal.id,
+        result: "still_available",
+        verifiedPriceCents: deal.priceCents,
+        submitterHash: `seed-research-${deal.id.slice(0, 8)}-${i}`,
+        note: "Recorded during the initial research import",
+        dayBucket: votedAt.toISOString().slice(0, 10),
+        createdAt: votedAt,
+      });
+    }
+  }
 
   for (const window of seed.schedule ?? []) {
     for (const day of window.days) {
