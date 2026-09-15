@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { AgeNotice } from "@/components/AgeNotice";
 import { siteUrl } from "@/lib/env";
 import "./globals.css";
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <AgeNotice />
         <div id="main-content" className="min-h-0 flex-1">{children}</div>
+        <Analytics />
       </body>
     </html>
   );
