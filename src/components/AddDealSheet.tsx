@@ -249,9 +249,15 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
               {submitting ? "Sending…" : "Submit deal"}
             </button>
             <p className="text-center text-xs text-ink-faint">
+              {/*
+                Deliberately not "a moderator checks these before they go
+                live": with auto-approve on that was simply false, and the
+                success screen ("Thanks — it's live.") contradicted it a
+                second later. This wording holds in either moderation mode.
+              */}
               {firstMissing()
                 ? "Needs a bar, a beer and a price."
-                : "No account needed. A moderator checks new deals before they go live."}
+                : "No account needed. Moderators review posts and can remove anything."}
             </p>
           </div>
         )

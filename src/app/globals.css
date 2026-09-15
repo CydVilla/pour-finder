@@ -200,25 +200,40 @@ body {
   background: var(--color-paper-sunk);
 }
 
-select.pf-control,
-.pf-input {
-  min-height: 2.5rem;
-}
+/*
+  These sit in @layer components on purpose. An unlayered rule beats every
+  layered one no matter the source order, so while `.pf-input` lived outside a
+  layer its `padding` shorthand silently swallowed every `pl-*` utility put on
+  an input — which is why the "$" and "⌕" prefixes rendered on top of their
+  own placeholder text instead of beside it. Inside the layer, utilities win,
+  which is what every call site already assumed.
 
-.pf-input {
-  width: 100%;
-  background: var(--color-card);
-  border: 1.5px solid var(--color-rule-strong);
-  border-radius: 10px;
-  padding: 0.6rem 0.8rem;
-  color: var(--color-ink);
-  font-size: 16px; /* iOS zooms inputs below 16px on focus. */
-}
-.pf-input::placeholder {
-  color: var(--color-ink-faint);
-}
-.pf-input:focus {
-  border-color: var(--color-ink);
+  Anything added here has to stay overridable the same way: no `!important`,
+  and don't move these rules back out of the layer.
+*/
+@layer components {
+  select.pf-control,
+  .pf-input {
+    min-height: 2.5rem;
+  }
+
+  .pf-input {
+    width: 100%;
+    background: var(--color-card);
+    border: 1.5px solid var(--color-rule-strong);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    color: var(--color-ink);
+    /* iOS zooms inputs below 16px on focus — so never pair `text-sm` or
+       smaller with .pf-input, because that now genuinely overrides this. */
+    font-size: 16px;
+  }
+  .pf-input::placeholder {
+    color: var(--color-ink-faint);
+  }
+  .pf-input:focus {
+    border-color: var(--color-ink);
+  }
 }
 
 /* ------------------------------------------------------------ scrollbars */
