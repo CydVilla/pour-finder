@@ -79,7 +79,12 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="wordmark min-w-0 truncate text-[1.05rem] leading-snug text-ink">
+            {/*
+              h2, not h3: these cards sit directly under the page h1, so an h3
+              left a hole in the outline for anyone navigating by heading. The
+              size is set explicitly, so the level carries no visual weight.
+            */}
+            <h2 className="wordmark min-w-0 truncate text-[1.05rem] leading-snug text-ink">
               {/*
                 -my-1.5/py-1.5 grows the tap area without moving anything: a
                 17px inline target is easy to miss on a phone, and a miss here
@@ -91,7 +96,7 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
               >
                 {venue.name}
               </Link>
-            </h3>
+            </h2>
             {distance && (
               <span className="shrink-0 pt-0.5 text-xs font-semibold text-ink-soft tabular-nums">
                 {distance}
