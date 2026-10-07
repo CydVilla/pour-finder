@@ -21,6 +21,18 @@ interface TaskRow {
   createdAt: string;
 }
 
+interface PriceReportRow {
+  id: string;
+  dealId: string;
+  venueName: string;
+  venueSlug: string;
+  beerName: string;
+  currentPriceCents: number;
+  reportedPriceCents: number;
+  note: string | null;
+  createdAt: string;
+}
+
 interface MediaRow {
   id: string;
   kind: "photo" | "video";
@@ -36,10 +48,12 @@ export function AdminQueue({
   submissions,
   tasks,
   media = [],
+  priceReports = [],
 }: {
   submissions: SubmissionRow[];
   tasks: TaskRow[];
   media?: MediaRow[];
+  priceReports?: PriceReportRow[];
 }) {
   const [handled, setHandled] = useState<Record<string, string>>({});
 
@@ -57,8 +71,82 @@ export function AdminQueue({
     }
   };
 
+  const money = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
   return (
     <div className="mt-6 space-y-8">
+      {/*
+        Price corrections come first: they are the only queue item a moderator
+        can resolve without leaving the page, because the reporter supplied the
+        replacement price. "Apply" goes through the same applyPriceChange as a
+        community edit, so the revision history is identical.
+      */}
+      <section>
+        <h2 className="text-xs font-bold uppercase tracking-wide text-ink-faint">
+          Price corrections ({priceReports.length})
+        </h2>
+        {priceReports.length === 0 ? (
+          <p className="mt-2 text-sm text-ink-soft">Nothing waiting.</p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {priceReports.map((report) => (
+              <li key={report.id} className="pf-card p-3">
+                <p className="font-semibold">
+                  {report.venueName} — {report.beerName}
+                </p>
+                <p className="text-sm text-ink-soft">
+                  <span className="line-through">{money(report.currentPriceCents)}</span>{" "}
+                  <span aria-hidden>→</span>{" "}
+                  <span className="font-bold text-ink">{money(report.reportedPriceCents)}</span>
+                </p>
+                {report.note && <p className="mt-1 text-sm text-ink-soft">“{report.note}”</p>}
+                <a
+                  href={`/venue/${report.venueSlug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs underline underline-offset-2"
+                >
+                  Open the venue page
+                </a>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    className="pf-button pf-button-primary px-3 py-1.5 text-sm"
+                    onClick={() =>
+                      act(
+                        `/api/admin/reports/${report.id}`,
+                        { decision: "apply" },
+                        report.id,
+                        "price updated",
+                      )
+                    }
+                  >
+                    Use {money(report.reportedPriceCents)}
+                  </button>
+                  <button
+                    type="button"
+                    className="pf-button pf-button-quiet px-3 py-1.5 text-sm"
+                    onClick={() =>
+                      act(
+                        `/api/admin/reports/${report.id}`,
+                        { decision: "dismiss" },
+                        report.id,
+                        "dismissed",
+                      )
+                    }
+                  >
+                    Dismiss
+                  </button>
+                  {handled[report.id] && (
+                    <span className="text-sm font-semibold text-fresh">{handled[report.id]}</span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <section>
         <h2 className="text-xs font-bold uppercase tracking-wide text-ink-faint">
           Reported as gone ({tasks.length})
@@ -98,7 +186,12 @@ export function AdminQueue({
                     type="button"
                     className="pf-button pf-button-quiet px-3 py-1.5 text-sm"
                     onClick={() =>
-                      act(`/api/admin/tasks/${task.id}`, { decision: "dismiss" }, task.id, "dismissed")
+                      act(
+                        `/api/admin/tasks/${task.id}`,
+                        { decision: "dismiss" },
+                        task.id,
+                        "dismissed",
+                      )
                     }
                   >
                     Leave it listed
@@ -127,10 +220,20 @@ export function AdminQueue({
             {media.map((item) => (
               <li key={item.id} className="pf-card overflow-hidden">
                 {item.kind === "video" ? (
-                  <video src={item.url} controls playsInline preload="metadata" className="h-44 w-full bg-paper-sunk object-contain" />
+                  <video
+                    src={item.url}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="h-44 w-full bg-paper-sunk object-contain"
+                  />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.url} alt="Awaiting moderation" className="h-44 w-full bg-paper-sunk object-contain" />
+                  <img
+                    src={item.url}
+                    alt="Awaiting moderation"
+                    className="h-44 w-full bg-paper-sunk object-contain"
+                  />
                 )}
                 <div className="p-3">
                   <p className="text-xs text-ink-soft">
@@ -147,14 +250,28 @@ export function AdminQueue({
                     <button
                       type="button"
                       className="pf-button pf-button-primary px-3 py-1.5 text-sm"
-                      onClick={() => act(`/api/admin/media/${item.id}`, { decision: "approve" }, item.id, "published")}
+                      onClick={() =>
+                        act(
+                          `/api/admin/media/${item.id}`,
+                          { decision: "approve" },
+                          item.id,
+                          "published",
+                        )
+                      }
                     >
                       Publish
                     </button>
                     <button
                       type="button"
                       className="pf-button pf-button-quiet px-3 py-1.5 text-sm"
-                      onClick={() => act(`/api/admin/media/${item.id}`, { decision: "reject" }, item.id, "deleted")}
+                      onClick={() =>
+                        act(
+                          `/api/admin/media/${item.id}`,
+                          { decision: "reject" },
+                          item.id,
+                          "deleted",
+                        )
+                      }
                     >
                       Reject &amp; delete
                     </button>

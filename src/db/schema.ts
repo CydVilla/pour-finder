@@ -202,12 +202,7 @@ export const mediaStatusEnum = pgEnum("media_status", [
   "removed",
 ]);
 
-export const placeKindEnum = pgEnum("place_kind", [
-  "state",
-  "city",
-  "neighborhood",
-  "postal_code",
-]);
+export const placeKindEnum = pgEnum("place_kind", ["state", "city", "neighborhood", "postal_code"]);
 
 /* ----------------------------------------------------------------- venues */
 
@@ -289,16 +284,17 @@ export const venueRevisions = pgTable(
       .references(() => venues.id, { onDelete: "cascade" }),
     revision: integer("revision").notNull(),
     changeType: changeTypeEnum("change_type").notNull(),
-    changedFields: jsonb("changed_fields").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    changedFields: jsonb("changed_fields")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     /** Full row snapshot as of this revision. */
     snapshot: jsonb("snapshot").notNull(),
     actor: text("actor"),
     note: text("note"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [
-    index("venue_revisions_venue_idx").on(t.venueId, t.revision),
-  ],
+  (t) => [index("venue_revisions_venue_idx").on(t.venueId, t.revision)],
 );
 
 /* ------------------------------------------------------------------ deals */
@@ -339,7 +335,10 @@ export const deals = pgTable(
      * Generated. NULL whenever total volume is unknown, so "best value" sort
      * can never silently invent a number.
      */
-    pricePerOunceCents: numeric("price_per_ounce_cents", { precision: 10, scale: 4 }).generatedAlwaysAs(
+    pricePerOunceCents: numeric("price_per_ounce_cents", {
+      precision: 10,
+      scale: 4,
+    }).generatedAlwaysAs(
       sql`CASE
             WHEN COALESCE(individual_serving_size_oz * quantity, serving_size_oz) > 0
             THEN price_cents::numeric / COALESCE(individual_serving_size_oz * quantity, serving_size_oz)
@@ -432,7 +431,10 @@ export const dealRevisions = pgTable(
       .references(() => deals.id, { onDelete: "cascade" }),
     revision: integer("revision").notNull(),
     changeType: changeTypeEnum("change_type").notNull(),
-    changedFields: jsonb("changed_fields").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    changedFields: jsonb("changed_fields")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     priceCents: integer("price_cents"),
     previousPriceCents: integer("previous_price_cents"),
     snapshot: jsonb("snapshot").notNull(),
@@ -480,8 +482,7 @@ export const dealVerifications = pgTable(
   },
   (t) => [
     // Abuse prevention: one person cannot stack confirmations on one deal.
-    uniqueIndex("deal_verifications_once_per_day")
-      .on(t.dealId, t.submitterHash, t.dayBucket),
+    uniqueIndex("deal_verifications_once_per_day").on(t.dealId, t.submitterHash, t.dayBucket),
     index("deal_verifications_deal_idx").on(t.dealId, t.createdAt),
   ],
 );
@@ -494,6 +495,15 @@ export const dealReports = pgTable(
     venueId: uuid("venue_id").references(() => venues.id, { onDelete: "cascade" }),
     reason: reportReasonEnum("reason").notNull(),
     note: text("note"),
+    /**
+     * What the reporter says the price actually is, when they know.
+     *
+     * "The price is wrong" is the most common report by a distance, and
+     * without this a moderator is told a price is wrong but not what it
+     * should be - so every such report costs a trip to the bar's menu.
+     * Nullable because knowing a price is stale is useful on its own.
+     */
+    reportedPriceCents: integer("reported_price_cents"),
     submitterHash: text("submitter_hash").notNull(),
     dayBucket: text("day_bucket").notNull(),
     status: submissionStatusEnum("status").notNull().default("pending"),
@@ -530,15 +540,19 @@ export const submissions = pgTable(
     sourceUrl: text("source_url"),
     sourceSnapshot: text("source_snapshot"),
     /** Object-storage keys for menu photos. Storage adapter is pluggable. */
-    evidenceImageKeys: jsonb("evidence_image_keys").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    evidenceImageKeys: jsonb("evidence_image_keys")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
 
     submitterHash: text("submitter_hash").notNull(),
     userId: uuid("user_id"),
 
     /** Populated by the duplicate detector so moderators see collisions. */
-    possibleDuplicateOf: jsonb("possible_duplicate_of").$type<
-      { kind: "venue" | "deal"; id: string; score: number; label: string }[]
-    >().notNull().default(sql`'[]'::jsonb`),
+    possibleDuplicateOf: jsonb("possible_duplicate_of")
+      .$type<{ kind: "venue" | "deal"; id: string; score: number; label: string }[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
 
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     reviewedBy: text("reviewed_by"),
@@ -558,23 +572,20 @@ export const submissions = pgTable(
  * userId column populated when accounts land, so reputation is a later join
  * rather than a later migration.
  */
-export const contributors = pgTable(
-  "contributors",
-  {
-    submitterHash: text("submitter_hash").primaryKey(),
-    userId: uuid("user_id"),
-    displayName: text("display_name"),
-    submissionCount: integer("submission_count").notNull().default(0),
-    approvedCount: integer("approved_count").notNull().default(0),
-    rejectedCount: integer("rejected_count").notNull().default(0),
-    verificationCount: integer("verification_count").notNull().default(0),
-    /** 0-100. Flat 50 for MVP; the inputs to compute it properly are all here. */
-    trustScore: integer("trust_score").notNull().default(50),
-    isBlocked: boolean("is_blocked").notNull().default(false),
-    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
-    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
-  },
-);
+export const contributors = pgTable("contributors", {
+  submitterHash: text("submitter_hash").primaryKey(),
+  userId: uuid("user_id"),
+  displayName: text("display_name"),
+  submissionCount: integer("submission_count").notNull().default(0),
+  approvedCount: integer("approved_count").notNull().default(0),
+  rejectedCount: integer("rejected_count").notNull().default(0),
+  verificationCount: integer("verification_count").notNull().default(0),
+  /** 0-100. Flat 50 for MVP; the inputs to compute it properly are all here. */
+  trustScore: integer("trust_score").notNull().default(50),
+  isBlocked: boolean("is_blocked").notNull().default(false),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /** Serverless-safe rate limiting. Swap for Redis when traffic warrants. */
 export const rateLimitEvents = pgTable(
@@ -689,7 +700,9 @@ export const moderationTasks = pgTable(
     title: text("title").notNull(),
     reason: text("reason").notNull(),
     /** Comment ids, vote tallies, prices - whatever justified opening this. */
-    evidence: jsonb("evidence").notNull().default(sql`'{}'::jsonb`),
+    evidence: jsonb("evidence")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
 
     externalProvider: text("external_provider"),
     externalRef: text("external_ref"),

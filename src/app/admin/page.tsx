@@ -7,6 +7,7 @@ import { AdminQueue } from "@/components/AdminQueue";
 import { AdminLogin } from "@/components/AdminLogin";
 import { adminTokenConfigured, isAdmin } from "@/server/admin";
 import { listPendingMedia } from "@/server/media";
+import { listPendingPriceReports } from "@/server/price-reports";
 import { listPendingSubmissions } from "@/server/submissions";
 
 /**
@@ -32,7 +33,7 @@ export default async function AdminPage() {
 
   if (!(await isAdmin())) return <AdminLogin />;
 
-  const [submissions, tasks, pendingMedia] = await Promise.all([
+  const [submissions, tasks, pendingMedia, priceReports] = await Promise.all([
     listPendingSubmissions(50),
     db
       .select()
@@ -41,6 +42,7 @@ export default async function AdminPage() {
       .orderBy(desc(moderationTasks.createdAt))
       .limit(50),
     listPendingMedia(50),
+    listPendingPriceReports(50),
   ]);
 
   return (
@@ -62,6 +64,7 @@ export default async function AdminPage() {
           sourceUrl: s.sourceUrl,
         }))}
         media={pendingMedia}
+        priceReports={priceReports}
         tasks={tasks.map((t) => ({
           id: t.id,
           kind: t.kind,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { DealDTO, VenueDTO } from "@/lib/types";
-import { formatCents } from "@/lib/money";
+import { formatCents, parseDollarsToCents } from "@/lib/money";
 import { Sheet } from "./Sheet";
 
 const REASONS = [
@@ -29,6 +29,7 @@ interface Props {
 export function ReportSheet({ open, onClose, target }: Props) {
   const [reason, setReason] = useState<(typeof REASONS)[number]["id"]>("price_wrong");
   const [note, setNote] = useState("");
+  const [newPrice, setNewPrice] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -37,6 +38,7 @@ export function ReportSheet({ open, onClose, target }: Props) {
     window.setTimeout(() => {
       setState("idle");
       setNote("");
+      setNewPrice("");
       setReason("price_wrong");
     }, 250);
   };
@@ -48,7 +50,13 @@ export function ReportSheet({ open, onClose, target }: Props) {
       const response = await fetch(`/api/deals/${target.deal.id}/report`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason, note: note.trim() || undefined }),
+        body: JSON.stringify({
+          reason,
+          note: note.trim() || undefined,
+          // Only meaningful for a price report; the schema ignores it otherwise.
+          reportedPriceCents:
+            reason === "price_wrong" ? (parseDollarsToCents(newPrice) ?? undefined) : undefined,
+        }),
       });
       const data = (await response.json()) as { message?: string; error?: string };
       if (!response.ok) {
@@ -73,7 +81,11 @@ export function ReportSheet({ open, onClose, target }: Props) {
       title="Report a problem"
       footer={
         state === "done" ? (
-          <button type="button" onClick={close} className="pf-button pf-button-primary w-full px-4 py-3">
+          <button
+            type="button"
+            onClick={close}
+            className="pf-button pf-button-primary w-full px-4 py-3"
+          >
             Done
           </button>
         ) : (
@@ -122,8 +134,44 @@ export function ReportSheet({ open, onClose, target }: Props) {
             </div>
           </fieldset>
 
+          {/*
+            "The price is wrong" is the most common report by a distance, and
+            on its own it tells a moderator a price is wrong but not what it
+            should be — so every one of them cost a trip to the bar's menu.
+            Asking here turns the commonest report into an actionable one.
+          */}
+          {reason === "price_wrong" && (
+            <div className="space-y-1.5">
+              <label
+                htmlFor="report-new-price"
+                className="text-xs font-bold uppercase tracking-wide text-ink-faint"
+              >
+                What is it now? (optional)
+              </label>
+              <div className="relative">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-faint"
+                >
+                  $
+                </span>
+                <input
+                  id="report-new-price"
+                  className="pf-input pl-7 tabular-nums"
+                  inputMode="decimal"
+                  placeholder="4.00"
+                  value={newPrice}
+                  onChange={(event) => setNewPrice(event.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1.5">
-            <label htmlFor="report-note" className="text-xs font-bold uppercase tracking-wide text-ink-faint">
+            <label
+              htmlFor="report-note"
+              className="text-xs font-bold uppercase tracking-wide text-ink-faint"
+            >
               Anything else? (optional)
             </label>
             <textarea

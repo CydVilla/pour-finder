@@ -14,10 +14,7 @@ import { consumeRateLimit } from "@/server/rate-limit";
  * staying up for a day is far lower than the cost of correct deals being
  * removable by three anonymous taps.
  */
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ dealId: string }> },
-) {
+export async function POST(request: NextRequest, context: { params: Promise<{ dealId: string }> }) {
   const { dealId } = await context.params;
   if (!/^[0-9a-f-]{36}$/i.test(dealId)) return jsonError("Unknown deal", 404);
 
@@ -36,6 +33,7 @@ export async function POST(
         dealId,
         reason: parsed.data.reason,
         note: parsed.data.note ?? null,
+        reportedPriceCents: parsed.data.reportedPriceCents ?? null,
         submitterHash,
         dayBucket: dayBucket(),
       })

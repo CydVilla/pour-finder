@@ -23,10 +23,7 @@ const optionalUrl = z
   .max(500)
   .optional()
   .transform((v) => (v === "" ? undefined : v))
-  .refine(
-    (v) => v === undefined || /^https?:\/\/\S+$/i.test(v),
-    "Must be a full http(s) URL",
-  );
+  .refine((v) => v === undefined || /^https?:\/\/\S+$/i.test(v), "Must be a full http(s) URL");
 
 /** A venue the submitter is creating inline because we don't have it yet. */
 export const newVenueSchema = z.object({
@@ -100,14 +97,10 @@ export const dealDetailsSchema = z
     sourceUrl: optionalUrl,
     sourceSnapshot: optionalText(500),
   })
-  .refine(
-    (deal) => deal.quantity === 1 || deal.servingSizeOz === undefined,
-    {
-      message:
-        "For multi-item deals (buckets, buckets of cans) use size per item, not total size",
-      path: ["servingSizeOz"],
-    },
-  );
+  .refine((deal) => deal.quantity === 1 || deal.servingSizeOz === undefined, {
+    message: "For multi-item deals (buckets, buckets of cans) use size per item, not total size",
+    path: ["servingSizeOz"],
+  });
 
 export type DealDetailsInput = z.infer<typeof dealDetailsSchema>;
 
@@ -171,6 +164,14 @@ export const verificationSchema = z.object({
 });
 
 export const reportSchema = z.object({
+  /*
+    `reportedPriceCents` mirrors verificationSchema. "The price is wrong" is by
+    far the most common report, and a report that says only *that* leaves a
+    moderator with nothing to act on — they have to go and find the real price
+    themselves. Optional, because someone who knows a price is stale but not
+    what replaced it should still be able to say so.
+  */
+  reportedPriceCents: z.coerce.number().int().min(0).max(1_000_000).optional(),
   reason: z.enum([
     "price_wrong",
     "no_longer_available",
@@ -208,12 +209,21 @@ export const uploadTicketSchema = z.object({
   dealId: z.string().uuid().optional(),
   purpose: z.enum(["price_evidence", "menu", "pour", "venue"]).default("pour"),
   mimeType: z.string().min(3).max(100),
-  sizeBytes: z.coerce.number().int().positive().max(64 * 1024 * 1024),
+  sizeBytes: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(64 * 1024 * 1024),
   caption: optionalText(200),
   assertedPriceCents: z.coerce.number().int().min(0).max(1_000_000).optional(),
   // Client-generated thumbnail / video poster.
   thumbnailMimeType: z.string().min(3).max(100).optional(),
-  thumbnailSizeBytes: z.coerce.number().int().positive().max(4 * 1024 * 1024).optional(),
+  thumbnailSizeBytes: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(4 * 1024 * 1024)
+    .optional(),
   width: z.coerce.number().int().positive().max(20000).optional(),
   height: z.coerce.number().int().positive().max(20000).optional(),
   durationSeconds: z.coerce.number().positive().max(600).optional(),

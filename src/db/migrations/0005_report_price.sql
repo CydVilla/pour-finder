@@ -1,0 +1,1 @@
+ALTER TABLE "deal_reports" ADD COLUMN "reported_price_cents" integer;
