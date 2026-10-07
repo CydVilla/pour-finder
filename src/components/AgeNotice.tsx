@@ -29,8 +29,8 @@ export function AgeNotice() {
     <div className="border-b border-rule bg-amber-wash">
       <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-3 py-2 sm:px-4">
         <p className="flex-1 text-xs text-ink-soft">
-          <span className="font-bold text-ink">21+.</span> Prices are community-reported and
-          change without notice. Please drink responsibly.
+          <span className="font-bold text-ink">21+.</span> Prices are community-reported and change
+          without notice. Please drink responsibly.
         </p>
         <button
           type="button"

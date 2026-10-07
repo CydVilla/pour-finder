@@ -31,7 +31,5 @@ export function PriceBlock({ priceCents, currency = "USD", size = "lg", classNam
           : "text-xl"
         : "text-lg";
 
-  return (
-    <span className={clsx("price-hero block text-ink", base, className)}>{text}</span>
-  );
+  return <span className={clsx("price-hero block text-ink", base, className)}>{text}</span>;
 }

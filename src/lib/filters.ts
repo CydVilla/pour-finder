@@ -78,7 +78,10 @@ export const DEFAULT_FILTERS: DealFilters = filterSchema.parse({});
 /** Comma-separated array params: `servingTypes=draft,can`. */
 function splitList(value: string | null): string[] | undefined {
   if (!value) return undefined;
-  const parts = value.split(",").map((s) => s.trim()).filter(Boolean);
+  const parts = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   return parts.length ? parts : undefined;
 }
 
@@ -90,10 +93,23 @@ function splitList(value: string | null): string[] | undefined {
 export function parseFilters(params: URLSearchParams): DealFilters {
   const raw: Record<string, unknown> = {};
   for (const key of [
-    "q", "maxPriceCents", "lat", "lng", "radiusMeters",
-    "minLat", "maxLat", "minLng", "maxLng",
-    "state", "citySlug", "neighborhood",
-    "verifiedWithinDays", "sort", "limit", "offset", "dayPart",
+    "q",
+    "maxPriceCents",
+    "lat",
+    "lng",
+    "radiusMeters",
+    "minLat",
+    "maxLat",
+    "minLng",
+    "maxLng",
+    "state",
+    "citySlug",
+    "neighborhood",
+    "verifiedWithinDays",
+    "sort",
+    "limit",
+    "offset",
+    "dayPart",
   ]) {
     const value = params.get(key);
     if (value !== null && value !== "") raw[key] = value;
@@ -145,7 +161,8 @@ export function serializeFilters(filters: Partial<DealFilters>): URLSearchParams
   if (filters.dayPart && filters.dayPart !== "any") params.set("dayPart", filters.dayPart);
   put("verifiedWithinDays", filters.verifiedWithinDays);
   if (filters.sort && filters.sort !== "price") params.set("sort", filters.sort);
-  if (filters.limit && filters.limit !== DEFAULT_FILTERS.limit) params.set("limit", String(filters.limit));
+  if (filters.limit && filters.limit !== DEFAULT_FILTERS.limit)
+    params.set("limit", String(filters.limit));
   if (filters.offset) params.set("offset", String(filters.offset));
 
   return params;

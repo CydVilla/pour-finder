@@ -12,10 +12,7 @@ import { recordVerification } from "@/server/verification";
  * because the entire value of the freshness badge is that it updates the
  * moment somebody standing at the bar taps it.
  */
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ dealId: string }> },
-) {
+export async function POST(request: NextRequest, context: { params: Promise<{ dealId: string }> }) {
   const { dealId } = await context.params;
   if (!/^[0-9a-f-]{36}$/i.test(dealId)) return jsonError("Unknown deal", 404);
 

@@ -52,7 +52,11 @@ export async function recordVerification(input: {
       // The unique index is the real defence: one vote per person per deal per
       // day. Silently doing nothing beats a 409 the user can't act on.
       .onConflictDoNothing({
-        target: [dealVerifications.dealId, dealVerifications.submitterHash, dealVerifications.dayBucket],
+        target: [
+          dealVerifications.dealId,
+          dealVerifications.submitterHash,
+          dealVerifications.dayBucket,
+        ],
       })
       .returning({ id: dealVerifications.id });
 

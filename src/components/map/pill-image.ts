@@ -36,7 +36,14 @@ export function createPillImage(fill: string, stroke: string, strokeWidth = 3): 
   ctx.shadowBlur = 6;
   ctx.shadowOffsetY = 2;
 
-  roundedRect(ctx, strokeWidth / 2, strokeWidth / 2, SIZE - strokeWidth, SIZE - strokeWidth, RADIUS);
+  roundedRect(
+    ctx,
+    strokeWidth / 2,
+    strokeWidth / 2,
+    SIZE - strokeWidth,
+    SIZE - strokeWidth,
+    RADIUS,
+  );
   ctx.fillStyle = fill;
   ctx.fill();
 

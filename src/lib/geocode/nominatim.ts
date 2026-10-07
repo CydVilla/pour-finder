@@ -18,9 +18,7 @@ export const nominatimGeocoder: Geocoder = {
     const base = envString("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org");
     const email = envString("NOMINATIM_CONTACT_EMAIL");
     if (!email) {
-      console.warn(
-        "[geocode] NOMINATIM_CONTACT_EMAIL is unset; Nominatim requires it. Skipping.",
-      );
+      console.warn("[geocode] NOMINATIM_CONTACT_EMAIL is unset; Nominatim requires it. Skipping.");
       return [];
     }
 
@@ -58,8 +56,13 @@ interface NominatimPlace {
 }
 
 const STATE_ABBR: Record<string, string> = {
-  Massachusetts: "MA", "Rhode Island": "RI", "New Hampshire": "NH", Connecticut: "CT",
-  Vermont: "VT", Maine: "ME", "New York": "NY",
+  Massachusetts: "MA",
+  "Rhode Island": "RI",
+  "New Hampshire": "NH",
+  Connecticut: "CT",
+  Vermont: "VT",
+  Maine: "ME",
+  "New York": "NY",
 };
 
 function toResult(place: NominatimPlace): GeocodeResult {

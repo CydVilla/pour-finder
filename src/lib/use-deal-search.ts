@@ -82,9 +82,7 @@ export function useDealSearch({ initial, filters, skipFirstFetch }: Options) {
     setData((current) => ({
       ...current,
       venues: current.venues.map((venue) =>
-        venue.deals.some((deal) => deal.id === dealId)
-          ? applyToVenue(venue, dealId, patch)
-          : venue,
+        venue.deals.some((deal) => deal.id === dealId) ? applyToVenue(venue, dealId, patch) : venue,
       ),
     }));
   }, []);

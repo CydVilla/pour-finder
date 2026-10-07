@@ -141,7 +141,10 @@ export async function commentOnIssue(issueNumber: string, body: string): Promise
 
 function splitEnv(value: string | undefined): string[] | null {
   if (!value) return null;
-  const parts = value.split(",").map((v) => v.trim()).filter(Boolean);
+  const parts = value
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
   return parts.length > 0 ? parts : null;
 }
 

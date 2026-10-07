@@ -65,7 +65,9 @@ export function AdminActivity() {
       setBusy((b) => ({ ...b, [key]: response.ok ? "removed" : "failed" }));
       if (response.ok) {
         setItems((current) =>
-          current.map((i) => (i.id === item.id && i.kind === item.kind ? { ...i, isLive: false } : i)),
+          current.map((i) =>
+            i.id === item.id && i.kind === item.kind ? { ...i, isLive: false } : i,
+          ),
         );
       }
     } catch {
@@ -113,10 +115,7 @@ export function AdminActivity() {
           {shown.map((item) => {
             const key = `${item.kind}:${item.id}`;
             return (
-              <li
-                key={key}
-                className={clsx("pf-card p-3", !item.isLive && "opacity-55")}
-              >
+              <li key={key} className={clsx("pf-card p-3", !item.isLive && "opacity-55")}>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <span className={clsx("rounded px-1.5 py-0.5 font-bold", KIND_STYLE[item.kind])}>
                     {KIND_LABEL[item.kind]}

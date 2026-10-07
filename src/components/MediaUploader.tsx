@@ -3,11 +3,7 @@
 import { useRef, useState } from "react";
 import type { MediaPurpose } from "@/db/schema";
 import { MEDIA_LIMITS, formatBytes, kindForMimeType } from "@/lib/media-limits";
-import {
-  ImageProcessingError,
-  processImage,
-  processVideo,
-} from "@/lib/image-processing";
+import { ImageProcessingError, processImage, processVideo } from "@/lib/image-processing";
 import { parseDollarsToCents } from "@/lib/money";
 
 interface Props {
@@ -67,7 +63,9 @@ export function MediaUploader({
     const limits = MEDIA_LIMITS[kind];
     if (file.size > limits.maxBytes) {
       setState("error");
-      setMessage(`Too big — ${formatBytes(file.size)}, and the limit is ${formatBytes(limits.maxBytes)}.`);
+      setMessage(
+        `Too big — ${formatBytes(file.size)}, and the limit is ${formatBytes(limits.maxBytes)}.`,
+      );
       return;
     }
 
@@ -228,7 +226,10 @@ export function MediaUploader({
     <div className="space-y-2">
       {purpose === "price_evidence" && (
         <div className="relative">
-          <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-faint">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-faint"
+          >
             $
           </span>
           <input

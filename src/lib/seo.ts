@@ -61,13 +61,21 @@ export function venueSchema(venue: VenueDTO, url: string): JsonLdNode {
     priceRange: publishable.length > 0 ? "$" : undefined,
     // Only assert opening state we actually know.
     ...(venue.status === "permanently_closed"
-      ? { additionalProperty: { "@type": "PropertyValue", name: "status", value: "Permanently closed" } }
+      ? {
+          additionalProperty: {
+            "@type": "PropertyValue",
+            name: "status",
+            value: "Permanently closed",
+          },
+        }
       : {}),
     makesOffer: publishable.length
       ? publishable.map((deal) => ({
           "@type": "Offer",
           name: `${deal.beerName}${
-            deal.servingType !== "other" ? ` (${SERVING_TYPE_LABEL[deal.servingType].toLowerCase()})` : ""
+            deal.servingType !== "other"
+              ? ` (${SERVING_TYPE_LABEL[deal.servingType].toLowerCase()})`
+              : ""
           }`,
           price: (deal.priceCents / 100).toFixed(2),
           priceCurrency: deal.currency,
@@ -92,9 +100,7 @@ function validUntil(deal: DealDTO): string {
   return until.toISOString().slice(0, 10);
 }
 
-export function breadcrumbSchema(
-  trail: { name: string; url: string }[],
-): JsonLdNode {
+export function breadcrumbSchema(trail: { name: string; url: string }[]): JsonLdNode {
   return {
     "@type": "BreadcrumbList",
     itemListElement: trail.map((crumb, index) => ({
@@ -126,8 +132,10 @@ export function venueListSchema(
 
 /** Wraps nodes in a single @graph so one script tag carries the whole page. */
 export function jsonLdGraph(nodes: JsonLdNode[]): string {
-  return JSON.stringify({ "@context": "https://schema.org", "@graph": nodes })
-    .replace(/</g, "\\u003c");
+  return JSON.stringify({ "@context": "https://schema.org", "@graph": nodes }).replace(
+    /</g,
+    "\\u003c",
+  );
 }
 
 /* ------------------------------------------------------------ copywriting */

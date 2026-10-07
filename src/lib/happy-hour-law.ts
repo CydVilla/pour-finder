@@ -28,14 +28,38 @@ interface LawEntry {
 }
 
 const STATE_LAW: Readonly<Record<string, LawEntry>> = {
-  AK: { law: "banned", note: "Alaska bans timed drink discounts, so what you'll find here is everyday low prices." },
-  MA: { law: "banned", note: "Massachusetts has banned happy hour since 1984, so what you'll find here is everyday low prices." },
-  NC: { law: "banned", note: "North Carolina bans timed drink discounts, so what you'll find here is everyday low prices." },
-  RI: { law: "banned", note: "Rhode Island bans timed drink discounts, so what you'll find here is everyday low prices." },
-  UT: { law: "banned", note: "Utah bans timed drink discounts, so what you'll find here is everyday low prices." },
-  VT: { law: "banned", note: "Vermont bans timed drink discounts, so what you'll find here is everyday low prices." },
-  IN: { law: "restricted", note: "Indiana allows happy hour again, but only up to 4 hours a day, 15 a week, and never past 9pm." },
-  OK: { law: "restricted", note: "Oklahoma only allows drink specials in limited windows, so most cheap beer here is an everyday price." },
+  AK: {
+    law: "banned",
+    note: "Alaska bans timed drink discounts, so what you'll find here is everyday low prices.",
+  },
+  MA: {
+    law: "banned",
+    note: "Massachusetts has banned happy hour since 1984, so what you'll find here is everyday low prices.",
+  },
+  NC: {
+    law: "banned",
+    note: "North Carolina bans timed drink discounts, so what you'll find here is everyday low prices.",
+  },
+  RI: {
+    law: "banned",
+    note: "Rhode Island bans timed drink discounts, so what you'll find here is everyday low prices.",
+  },
+  UT: {
+    law: "banned",
+    note: "Utah bans timed drink discounts, so what you'll find here is everyday low prices.",
+  },
+  VT: {
+    law: "banned",
+    note: "Vermont bans timed drink discounts, so what you'll find here is everyday low prices.",
+  },
+  IN: {
+    law: "restricted",
+    note: "Indiana allows happy hour again, but only up to 4 hours a day, 15 a week, and never past 9pm.",
+  },
+  OK: {
+    law: "restricted",
+    note: "Oklahoma only allows drink specials in limited windows, so most cheap beer here is an everyday price.",
+  },
 };
 
 /** Null when the state has no special rule, or when no state is in play. */

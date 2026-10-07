@@ -118,8 +118,8 @@ export function SeoContent({ venues, placeName, intro }: Props) {
             Every price here was reported by a person — from a menu, a bar&apos;s own website, or
             somebody who went and looked. Nothing is scraped and nothing is estimated. When a bar
             advertises &ldquo;$1 drafts&rdquo; without saying how big the pour is, that is recorded
-            as unknown rather than guessed, which is why some entries say{" "}
-            <em>size unknown</em> instead of showing a price per ounce.
+            as unknown rather than guessed, which is why some entries say <em>size unknown</em>{" "}
+            instead of showing a price per ounce.
             {withKnownSize.length > 0 && (
               <>
                 {" "}

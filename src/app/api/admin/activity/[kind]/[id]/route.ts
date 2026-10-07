@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { comments, deals, media, venues } from "@/db/schema";
+import { comments, deals, venues } from "@/db/schema";
 import { isAdminRequest } from "@/server/admin";
 import { jsonError, jsonOk, readJson, zodError } from "@/server/http";
 import { reviewMedia } from "@/server/media";
@@ -79,7 +79,12 @@ export async function POST(
           // Its deals go with it, but nothing is deleted.
           await tx
             .update(deals)
-            .set({ status: "removed", endedAt: new Date(), endedReason: note, updatedAt: new Date() })
+            .set({
+              status: "removed",
+              endedAt: new Date(),
+              endedReason: note,
+              updatedAt: new Date(),
+            })
             .where(and(eq(deals.venueId, id), eq(deals.status, "active")));
         }
         return Boolean(updated);

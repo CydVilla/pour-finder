@@ -49,7 +49,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <AgeNotice />
-        <div id="main-content" className="min-h-0 flex-1">{children}</div>
+        <div id="main-content" className="min-h-0 flex-1">
+          {children}
+        </div>
         <Analytics />
       </body>
     </html>

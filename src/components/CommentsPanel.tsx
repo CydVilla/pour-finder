@@ -136,7 +136,10 @@ export function CommentsPanel({ venue, deal }: Props) {
 
         {signal === "price_changed" && (
           <div className="relative">
-            <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-faint">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-bold text-ink-faint"
+            >
               $
             </span>
             <input
@@ -154,9 +157,7 @@ export function CommentsPanel({ venue, deal }: Props) {
           rows={2}
           className="pf-input resize-none"
           placeholder={
-            signal === "still_good"
-              ? "Was there tonight, still $1…"
-              : "What did you find?"
+            signal === "still_good" ? "Was there tonight, still $1…" : "What did you find?"
           }
           aria-label="Your comment"
           value={body}

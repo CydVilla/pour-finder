@@ -32,7 +32,10 @@ export async function POST(request: NextRequest) {
           415,
         );
       case "too_large":
-        return jsonError(`That file is too big — the limit is ${formatBytes(result.maxBytes)}.`, 413);
+        return jsonError(
+          `That file is too big — the limit is ${formatBytes(result.maxBytes)}.`,
+          413,
+        );
       case "unknown_venue":
         return jsonError("That venue doesn't exist.", 404);
       case "unknown_deal":

@@ -41,19 +41,35 @@ export function EmptyState({
 
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         {maxPriceCents !== undefined && maxPriceCents < 2000 && (
-          <button type="button" className="pf-button pf-button-quiet px-4 py-2 text-sm" onClick={onRelaxPrice}>
+          <button
+            type="button"
+            className="pf-button pf-button-quiet px-4 py-2 text-sm"
+            onClick={onRelaxPrice}
+          >
             Raise price to {formatCents(Math.min(maxPriceCents * 2, 2000))}
           </button>
         )}
-        <button type="button" className="pf-button pf-button-quiet px-4 py-2 text-sm" onClick={onWiden}>
+        <button
+          type="button"
+          className="pf-button pf-button-quiet px-4 py-2 text-sm"
+          onClick={onWiden}
+        >
           Search a wider area
         </button>
         {hasFilters && (
-          <button type="button" className="pf-button pf-button-quiet px-4 py-2 text-sm" onClick={onClear}>
+          <button
+            type="button"
+            className="pf-button pf-button-quiet px-4 py-2 text-sm"
+            onClick={onClear}
+          >
             Clear all filters
           </button>
         )}
-        <button type="button" className="pf-button pf-button-amber px-4 py-2 text-sm" onClick={onAddDeal}>
+        <button
+          type="button"
+          className="pf-button pf-button-amber px-4 py-2 text-sm"
+          onClick={onAddDeal}
+        >
           Add a beer deal
         </button>
       </div>

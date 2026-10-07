@@ -117,7 +117,9 @@ export default function MapView({
       // load - not for a single 404 tile, and not for a transient glyph miss.
       const error = event.error as (Error & { status?: number }) | undefined;
       const isFetchFailure =
-        typeof error?.status === "number" ? error.status >= 400 : /failed to fetch/i.test(error?.message ?? "");
+        typeof error?.status === "number"
+          ? error.status >= 400
+          : /failed to fetch/i.test(error?.message ?? "");
       const hasNoStyle = (map.getStyle()?.layers?.length ?? 0) === 0;
       if (isFetchFailure && hasNoStyle) setStyleFailed(true);
       console.warn("[map]", error?.message ?? event);
@@ -369,7 +371,9 @@ export default function MapView({
 
       {!hasPainted && !styleFailed && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-paper-sunk">
-          <span className="pf-card px-3 py-2 text-xs font-semibold text-ink-soft">Loading map…</span>
+          <span className="pf-card px-3 py-2 text-xs font-semibold text-ink-soft">
+            Loading map…
+          </span>
         </div>
       )}
 
@@ -434,16 +438,17 @@ function registerLayers(map: MapLibreMap): void {
     if (!map.getLayer(layer.id)) map.addLayer(layer);
   };
 
-  if (!map.getSource(SOURCE_ID)) map.addSource(SOURCE_ID, {
-    type: "geojson",
-    data: { type: "FeatureCollection", features: [] },
-    cluster: true,
-    clusterRadius: 48,
-    clusterMaxZoom: 14,
-    // Lets a cluster know the cheapest price it contains (used in aria/tooltip
-    // and available for future cluster labelling).
-    clusterProperties: { minPrice: ["min", ["get", "priceCents"]] },
-  });
+  if (!map.getSource(SOURCE_ID))
+    map.addSource(SOURCE_ID, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+      cluster: true,
+      clusterRadius: 48,
+      clusterMaxZoom: 14,
+      // Lets a cluster know the cheapest price it contains (used in aria/tooltip
+      // and available for future cluster labelling).
+      clusterProperties: { minPrice: ["min", ["get", "priceCents"]] },
+    });
 
   if (!map.getSource(SELECTED_SOURCE_ID)) {
     map.addSource(SELECTED_SOURCE_ID, {
@@ -600,7 +605,6 @@ function escapeHtml(value: string): string {
 
 function prefersReducedMotion(): boolean {
   return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 }

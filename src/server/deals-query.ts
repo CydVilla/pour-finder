@@ -16,7 +16,6 @@
 import { sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import {
-  boundingBoxFromRadius,
   distanceMeters as distanceMetersSql,
   isSaneBoundingBox,
   resolveGeoBackend,
@@ -27,7 +26,12 @@ import {
 import { BEER_TAGS, beerTagById } from "@/lib/beer";
 import type { DealFilters } from "@/lib/filters";
 import { formatSchedule, type ScheduleWindow } from "@/lib/format";
-import { confidenceScore, freshnessFromDays, FRESHNESS_ORDER, type Freshness } from "@/lib/freshness";
+import {
+  confidenceScore,
+  freshnessFromDays,
+  FRESHNESS_ORDER,
+  type Freshness,
+} from "@/lib/freshness";
 import { totalOunces } from "@/lib/money";
 import type { DealDTO, DealSearchResponse, VenueDTO } from "@/lib/types";
 import {
@@ -119,7 +123,10 @@ export async function searchDeals(
       ${scheduleJson}     AS schedule
     FROM deals
     JOIN venues ON venues.id = deals.venue_id
-    WHERE deals.venue_id = ANY(${sql`ARRAY[${sql.join(venueIds.map((id) => sql`${id}`), sql`, `)}]::uuid[]`})
+    WHERE deals.venue_id = ANY(${sql`ARRAY[${sql.join(
+      venueIds.map((id) => sql`${id}`),
+      sql`, `,
+    )}]::uuid[]`})
       AND ${where}
     ORDER BY ${dealOrderBy(filters.sort)}
   `)) as unknown as DealRow[];
@@ -249,7 +256,10 @@ function buildConditions(filters: DealFilters, backend: GeoBackend): SQL[] {
 
   if (filters.dayPart !== "any") {
     const days = filters.dayPart === "weekend" ? [0, 6] : [1, 2, 3, 4, 5];
-    const dayList = sql.join(days.map((d) => sql`${d}`), sql`, `);
+    const dayList = sql.join(
+      days.map((d) => sql`${d}`),
+      sql`, `,
+    );
     // A deal with no schedule runs every day, so it satisfies both day parts.
     conditions.push(sql`(
       NOT EXISTS (SELECT 1 FROM deal_schedules s WHERE s.deal_id = deals.id)

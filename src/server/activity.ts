@@ -89,7 +89,9 @@ export async function recentActivity(days = 14, limit = 120): Promise<ActivityIt
     kind: row.kind,
     id: row.id,
     createdAt:
-      row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString(),
+      row.created_at instanceof Date
+        ? row.created_at.toISOString()
+        : new Date(row.created_at).toISOString(),
     title: row.title,
     detail: row.detail,
     venueSlug: row.venue_slug,

@@ -25,7 +25,9 @@ export function boundingBoxFromRadius(origin: LatLng, meters: number): BoundingB
   const cosLat = Math.cos((origin.lat * Math.PI) / 180);
   // Guard against division blow-up within ~11m of a pole.
   const lngDelta =
-    Math.abs(cosLat) < 1e-6 ? 180 : (meters / (EARTH_RADIUS_M * Math.abs(cosLat))) * (180 / Math.PI);
+    Math.abs(cosLat) < 1e-6
+      ? 180
+      : (meters / (EARTH_RADIUS_M * Math.abs(cosLat))) * (180 / Math.PI);
 
   return {
     minLat: clampLat(origin.lat - latDelta),

@@ -1,6 +1,5 @@
 "use client";
 
-import clsx from "clsx";
 import { formatServingDescription } from "@/lib/format";
 import { formatPricePerOunce } from "@/lib/money";
 import { sourceLabel } from "@/lib/freshness";
@@ -59,9 +58,7 @@ export function DealRow({ deal, onVerified, onReport, expanded = false }: Props)
           {deal.isAvailableNow === true && deal.scheduleSummary && (
             <span className="font-semibold text-fresh">Available now</span>
           )}
-          {deal.isAvailableNow === false && (
-            <span className="text-ink-faint">Not right now</span>
-          )}
+          {deal.isAvailableNow === false && <span className="text-ink-faint">Not right now</span>}
           {deal.isAvailableNow === null && (
             <span className="text-ink-faint">Availability varies</span>
           )}

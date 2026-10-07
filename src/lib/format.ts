@@ -37,7 +37,8 @@ export function formatServingSize(deal: {
   const { servingSizeOz, servingSizeLabel, quantity, individualServingSizeOz } = deal;
 
   if (quantity > 1) {
-    const each = individualServingSizeOz !== null ? ` × ${trimNum(individualServingSizeOz)} oz` : "";
+    const each =
+      individualServingSizeOz !== null ? ` × ${trimNum(individualServingSizeOz)} oz` : "";
     return `${quantity}${each}`;
   }
   /*
@@ -143,7 +144,9 @@ export function formatTime(value: string): string {
   const minute = Number(mRaw ?? 0);
   const meridiem = hour >= 12 ? "pm" : "am";
   const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-  return minute === 0 ? `${displayHour}${meridiem}` : `${displayHour}:${String(minute).padStart(2, "0")}${meridiem}`;
+  return minute === 0
+    ? `${displayHour}${meridiem}`
+    : `${displayHour}:${String(minute).padStart(2, "0")}${meridiem}`;
 }
 
 /** "3 deals from $1" summary line. */

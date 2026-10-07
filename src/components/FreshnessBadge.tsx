@@ -11,7 +11,12 @@ const STYLES: Record<Freshness, { dot: string; text: string; wash: string; short
     wash: "bg-outdated-wash",
     short: "Likely outdated",
   },
-  unverified: { dot: "bg-unknown", text: "text-unknown", wash: "bg-unknown-wash", short: "Unverified" },
+  unverified: {
+    dot: "bg-unknown",
+    text: "text-unknown",
+    wash: "bg-unknown-wash",
+    short: "Unverified",
+  },
 };
 
 interface Props {

@@ -55,7 +55,8 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
 
   const [beerName, setBeerName] = useState("");
   const [price, setPrice] = useState("");
-  const [servingType, setServingType] = useState<(typeof servingTypeEnum.enumValues)[number]>("draft");
+  const [servingType, setServingType] =
+    useState<(typeof servingTypeEnum.enumValues)[number]>("draft");
   const [sizeOz, setSizeOz] = useState("");
   const [sizeLabel, setSizeLabel] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -108,7 +109,8 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
   const hourLaw = happyHourLaw(creatingVenue ? newVenue.state : venue?.state);
 
   const priceCents = parseDollarsToCents(price);
-  const hasVenue = Boolean(venue) || (creatingVenue && newVenue.name.trim() && newVenue.city.trim());
+  const hasVenue =
+    Boolean(venue) || (creatingVenue && newVenue.name.trim() && newVenue.city.trim());
 
   /**
    * Returns the first thing still missing, or null.
@@ -140,7 +142,10 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
       // Take them to the field rather than leaving them to hunt for it.
       const target =
         gap === "venue" ? venueRef.current : gap === "beer" ? beerRef.current : priceRef.current;
-      target?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "center" });
+      target?.scrollIntoView({
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
+        block: "center",
+      });
       if (target instanceof HTMLInputElement) window.setTimeout(() => target.focus(), 250);
       return;
     }
@@ -208,14 +213,19 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
         }),
       });
 
-      const data = (await response.json()) as SubmitResult | { error: string; fieldErrors?: Record<string, string[]> };
+      const data = (await response.json()) as
+        SubmitResult | { error: string; fieldErrors?: Record<string, string[]> };
 
       if (!response.ok || "error" in data) {
         const detail =
           "fieldErrors" in data && data.fieldErrors
             ? Object.values(data.fieldErrors).flat().join(" ")
             : "";
-        setError([("error" in data && data.error) || "Something went wrong", detail].filter(Boolean).join(" — "));
+        setError(
+          [("error" in data && data.error) || "Something went wrong", detail]
+            .filter(Boolean)
+            .join(" — "),
+        );
         return;
       }
 
@@ -236,7 +246,11 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
       size="lg"
       footer={
         result ? (
-          <button type="button" onClick={close} className="pf-button pf-button-primary w-full px-4 py-3">
+          <button
+            type="button"
+            onClick={close}
+            className="pf-button pf-button-primary w-full px-4 py-3"
+          >
             Done
           </button>
         ) : (
@@ -695,9 +709,7 @@ function VenuePicker({
         </ul>
       )}
 
-      {searching && trimmed.length >= 2 && (
-        <p className="text-xs text-ink-faint">Searching…</p>
-      )}
+      {searching && trimmed.length >= 2 && <p className="text-xs text-ink-faint">Searching…</p>}
 
       {/*
         Only fifteen venues are seeded, so a search for almost any real bar
@@ -710,7 +722,8 @@ function VenuePicker({
       {noMatches ? (
         <div className="rounded-lg border-[1.5px] border-dashed border-rule-strong bg-paper-sunk p-3">
           <p className="text-sm text-ink">
-            No bars here matching <span className="font-semibold">&ldquo;{trimmed}&rdquo;</span> yet.
+            No bars here matching <span className="font-semibold">&ldquo;{trimmed}&rdquo;</span>{" "}
+            yet.
           </p>
           <p className="mt-0.5 text-xs text-ink-soft">
             Most places aren&apos;t listed yet — adding it takes a few seconds.
@@ -736,7 +749,10 @@ function VenuePicker({
   );
 }
 
-async function geocodeCity(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
+async function geocodeCity(
+  city: string,
+  state: string,
+): Promise<{ lat: number; lng: number } | null> {
   try {
     const response = await fetch(`/api/places?q=${encodeURIComponent(`${city} ${state}`)}`);
     if (!response.ok) return null;

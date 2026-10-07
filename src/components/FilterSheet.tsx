@@ -3,11 +3,7 @@
 import clsx from "clsx";
 import { servingTypeEnum } from "@/db/schema";
 import { BEER_TAGS } from "@/lib/beer";
-import {
-  FRESHNESS_PRESETS_DAYS,
-  RADIUS_PRESETS_MILES,
-  type DealFilters,
-} from "@/lib/filters";
+import { FRESHNESS_PRESETS_DAYS, RADIUS_PRESETS_MILES, type DealFilters } from "@/lib/filters";
 import { SERVING_TYPE_LABEL } from "@/lib/format";
 import { happyHourLaw } from "@/lib/happy-hour-law";
 import { milesToMeters } from "@/lib/geo-math";
@@ -75,14 +71,20 @@ export function FilterSheet({
           >
             Clear all
           </button>
-          <button type="button" onClick={onClose} className="pf-button pf-button-primary flex-[2] px-4 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="pf-button pf-button-primary flex-[2] px-4 py-3"
+          >
             {/*
               Showing the previous filters' count while a new query is in
               flight means the button states a number that is simply wrong for
               up to a few seconds — it read "Show 13 places" when the answer
               was 0. Better to say nothing than to assert stale data.
             */}
-            {isLoading ? "Updating…" : `Show ${resultCount} ${resultCount === 1 ? "place" : "places"}`}
+            {isLoading
+              ? "Updating…"
+              : `Show ${resultCount} ${resultCount === 1 ? "place" : "places"}`}
           </button>
         </div>
       }
@@ -124,7 +126,10 @@ export function FilterSheet({
           </div>
         </Group>
 
-        <Group label="Distance" hint={hasOrigin ? undefined : "Share your location or search a place first"}>
+        <Group
+          label="Distance"
+          hint={hasOrigin ? undefined : "Share your location or search a place first"}
+        >
           <ChipRow
             disabled={!hasOrigin}
             options={[

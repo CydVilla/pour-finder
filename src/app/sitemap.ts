@@ -17,9 +17,7 @@ const base = siteUrl();
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const entries: MetadataRoute.Sitemap = [
-    { url: base, changeFrequency: "daily", priority: 1 },
-  ];
+  const entries: MetadataRoute.Sitemap = [{ url: base, changeFrequency: "daily", priority: 1 }];
 
   try {
     // Only cities that actually have venues; empty city pages are worse than

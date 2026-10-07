@@ -313,7 +313,9 @@ function buildIssueBody(input: {
 
   for (const report of input.reports) {
     const price =
-      report.reportedPriceCents !== null ? ` (reported ${formatCents(report.reportedPriceCents)})` : "";
+      report.reportedPriceCents !== null
+        ? ` (reported ${formatCents(report.reportedPriceCents)})`
+        : "";
     // Community text is untrusted: quote it, never render it as instructions.
     const quoted = report.body.replace(/\r?\n/g, " ").slice(0, 240);
     lines.push(`- \`${report.signal}\`${price} — > ${quoted}`);

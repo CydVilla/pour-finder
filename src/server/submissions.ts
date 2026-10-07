@@ -160,7 +160,11 @@ export async function applySubmission(
       }
 
       case "update_deal": {
-        const [existing] = await tx.select().from(deals).where(eq(deals.id, payload.dealId)).limit(1);
+        const [existing] = await tx
+          .select()
+          .from(deals)
+          .where(eq(deals.id, payload.dealId))
+          .limit(1);
         if (!existing) return { ok: false, message: "Deal no longer exists" };
 
         const priceChanged =
@@ -201,7 +205,11 @@ export async function applySubmission(
       case "deal_ended": {
         // endDeal opens its own transaction; inline the same work here so the
         // whole approval stays atomic.
-        const [existing] = await tx.select().from(deals).where(eq(deals.id, payload.dealId)).limit(1);
+        const [existing] = await tx
+          .select()
+          .from(deals)
+          .where(eq(deals.id, payload.dealId))
+          .limit(1);
         if (!existing) return { ok: false, message: "Deal no longer exists" };
 
         const [updated] = await tx
@@ -228,7 +236,11 @@ export async function applySubmission(
       }
 
       case "venue_closed": {
-        const [existing] = await tx.select().from(venues).where(eq(venues.id, payload.venueId)).limit(1);
+        const [existing] = await tx
+          .select()
+          .from(venues)
+          .where(eq(venues.id, payload.venueId))
+          .limit(1);
         if (!existing) return { ok: false, message: "Venue not found" };
 
         const [updated] = await tx
@@ -267,7 +279,11 @@ export async function applySubmission(
       }
 
       case "venue_correction": {
-        const [existing] = await tx.select().from(venues).where(eq(venues.id, payload.venueId)).limit(1);
+        const [existing] = await tx
+          .select()
+          .from(venues)
+          .where(eq(venues.id, payload.venueId))
+          .limit(1);
         if (!existing) return { ok: false, message: "Venue not found" };
 
         const [updated] = await tx

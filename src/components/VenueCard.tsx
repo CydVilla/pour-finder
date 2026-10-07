@@ -65,87 +65,86 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
         />
 
         <div className="pointer-events-none relative z-10 flex gap-3 p-3 text-left">
-        <div
-          aria-hidden
-          className="flex w-[76px] shrink-0 flex-col items-center justify-center rounded-lg bg-amber-wash px-1 py-2"
-        >
-          <PriceBlock priceCents={headline.priceCents} currency={headline.currency} size="lg" />
-          {perOunce && (
-            <span className="mt-1 text-[10px] font-semibold text-amber-deep tabular-nums">
-              {perOunce}
-            </span>
-          )}
-        </div>
+          <div
+            aria-hidden
+            className="flex w-[76px] shrink-0 flex-col items-center justify-center rounded-lg bg-amber-wash px-1 py-2"
+          >
+            <PriceBlock priceCents={headline.priceCents} currency={headline.currency} size="lg" />
+            {perOunce && (
+              <span className="mt-1 text-[10px] font-semibold text-amber-deep tabular-nums">
+                {perOunce}
+              </span>
+            )}
+          </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            {/*
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              {/*
               h2, not h3: these cards sit directly under the page h1, so an h3
               left a hole in the outline for anyone navigating by heading. The
               size is set explicitly, so the level carries no visual weight.
             */}
-            <h2 className="wordmark min-w-0 truncate text-[1.05rem] leading-snug text-ink">
-              {/*
+              <h2 className="wordmark min-w-0 truncate text-[1.05rem] leading-snug text-ink">
+                {/*
                 -my-1.5/py-1.5 grows the tap area without moving anything: a
                 17px inline target is easy to miss on a phone, and a miss here
                 lands on the card behind it instead of opening the venue.
               */}
-              <Link
-                href={`/venue/${venue.slug}`}
-                className="pointer-events-auto -my-1.5 inline-block py-1.5 hover:underline hover:decoration-rule-strong hover:underline-offset-4"
-              >
-                {venue.name}
-              </Link>
-            </h2>
-            {distance && (
-              <span className="shrink-0 pt-0.5 text-xs font-semibold text-ink-soft tabular-nums">
-                {distance}
-              </span>
-            )}
-          </div>
+                <Link
+                  href={`/venue/${venue.slug}`}
+                  className="pointer-events-auto -my-1.5 inline-block py-1.5 hover:underline hover:decoration-rule-strong hover:underline-offset-4"
+                >
+                  {venue.name}
+                </Link>
+              </h2>
+              {distance && (
+                <span className="shrink-0 pt-0.5 text-xs font-semibold text-ink-soft tabular-nums">
+                  {distance}
+                </span>
+              )}
+            </div>
 
-          <p className="truncate text-xs text-ink-faint">
-            {[venue.neighborhood, venue.city, venue.state].filter(Boolean).join(" · ")}
-            {venue.status === "temporarily_closed" && (
-              <span className="ml-1 font-semibold text-stale">· Temporarily closed</span>
-            )}
-          </p>
-
-          <p className="mt-1.5 text-sm font-semibold leading-tight text-ink">
-            <span className="sr-only">{formatCents(headline.priceCents)} — </span>
-            {headline.beerName}
-          </p>
-          <p className="text-xs text-ink-soft">{formatServingDescription(headline)}</p>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            <FreshnessBadge
-              freshness={headline.freshness}
-              daysSinceVerified={headline.daysSinceVerified}
-            />
-            {headline.verificationCount > 0 && (
-              <span className="text-ink-soft">
-                <span aria-hidden>👍</span> {headline.verificationCount}
-              </span>
-            )}
-            {headline.isHappyHour && (
-              <span className="rounded bg-amber-wash px-1.5 py-0.5 font-semibold text-amber-deep">
-                Happy hour
-              </span>
-            )}
-            {headline.isAvailableNow === true && headline.scheduleSummary && (
-              <span className="font-semibold text-fresh">Available now</span>
-            )}
-          </div>
-
-          {hint && <p className="mt-1 text-xs font-medium text-stale">{hint}</p>}
-
-          {others.length > 0 && (
-            <p className="mt-1.5 text-xs font-semibold text-ink-soft">
-              {pluralize(venue.dealCount, "deal")} from{" "}
-              {formatCents(venue.cheapestPriceCents)}
+            <p className="truncate text-xs text-ink-faint">
+              {[venue.neighborhood, venue.city, venue.state].filter(Boolean).join(" · ")}
+              {venue.status === "temporarily_closed" && (
+                <span className="ml-1 font-semibold text-stale">· Temporarily closed</span>
+              )}
             </p>
-          )}
-        </div>
+
+            <p className="mt-1.5 text-sm font-semibold leading-tight text-ink">
+              <span className="sr-only">{formatCents(headline.priceCents)} — </span>
+              {headline.beerName}
+            </p>
+            <p className="text-xs text-ink-soft">{formatServingDescription(headline)}</p>
+
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              <FreshnessBadge
+                freshness={headline.freshness}
+                daysSinceVerified={headline.daysSinceVerified}
+              />
+              {headline.verificationCount > 0 && (
+                <span className="text-ink-soft">
+                  <span aria-hidden>👍</span> {headline.verificationCount}
+                </span>
+              )}
+              {headline.isHappyHour && (
+                <span className="rounded bg-amber-wash px-1.5 py-0.5 font-semibold text-amber-deep">
+                  Happy hour
+                </span>
+              )}
+              {headline.isAvailableNow === true && headline.scheduleSummary && (
+                <span className="font-semibold text-fresh">Available now</span>
+              )}
+            </div>
+
+            {hint && <p className="mt-1 text-xs font-medium text-stale">{hint}</p>}
+
+            {others.length > 0 && (
+              <p className="mt-1.5 text-xs font-semibold text-ink-soft">
+                {pluralize(venue.dealCount, "deal")} from {formatCents(venue.cheapestPriceCents)}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -157,7 +156,11 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
           aria-expanded={expanded}
           aria-controls={`venue-details-${venue.id}`}
         >
-          {expanded ? "Hide details" : others.length > 0 ? "See all deals & confirm" : "Details & confirm"}
+          {expanded
+            ? "Hide details"
+            : others.length > 0
+              ? "See all deals & confirm"
+              : "Details & confirm"}
         </button>
       </div>
 

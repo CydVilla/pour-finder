@@ -1,0 +1,10 @@
+.next
+node_modules
+coverage
+package-lock.json
+
+# Drizzle writes and diffs these itself. Reformatting them makes drizzle-kit's
+# snapshot comparison noisy at best and wrong at worst.
+src/db/migrations/
+
+*.md

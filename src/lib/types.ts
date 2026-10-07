@@ -139,8 +139,7 @@ export interface PlaceSuggestion {
 }
 
 export type SearchSuggestion =
-  | ({ type: "venue" } & VenueSearchResult)
-  | ({ type: "place" } & PlaceSuggestion);
+  ({ type: "venue" } & VenueSearchResult) | ({ type: "place" } & PlaceSuggestion);
 
 export interface ApiError {
   error: string;

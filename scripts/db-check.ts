@@ -40,7 +40,10 @@ let parsed: URL;
 try {
   parsed = new URL(url);
 } catch {
-  fail("DATABASE_URL is not a valid URL.", "It should look like postgres://user:password@host/dbname?sslmode=require");
+  fail(
+    "DATABASE_URL is not a valid URL.",
+    "It should look like postgres://user:password@host/dbname?sslmode=require",
+  );
 }
 
 if (!/^postgres(ql)?:$/.test(parsed.protocol)) {
@@ -70,7 +73,7 @@ if (parsed.hostname.includes("neon.tech")) {
     );
   }
   if (parsed.searchParams.get("sslmode") !== "require") {
-    console.warn('\n⚠ Neon requires TLS. Add ?sslmode=require to the URL.');
+    console.warn("\n⚠ Neon requires TLS. Add ?sslmode=require to the URL.");
   }
 }
 
@@ -86,7 +89,9 @@ async function main(): Promise<void> {
     const [postgis] = await sql`
       SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') AS present
     `;
-    console.log(`  PostGIS:  ${postgis?.present ? "installed → geo backend 'postgis'" : "absent → geo backend 'haversine' (fine)"}`);
+    console.log(
+      `  PostGIS:  ${postgis?.present ? "installed → geo backend 'postgis'" : "absent → geo backend 'haversine' (fine)"}`,
+    );
 
     const tables = await sql<{ table_name: string }[]>`
       SELECT table_name FROM information_schema.tables
@@ -109,7 +114,9 @@ async function main(): Promise<void> {
     `;
 
     const venues = Number(counts?.venues ?? 0);
-    console.log(`  venues: ${venues}  active deals: ${counts?.active_deals}  gazetteer: ${counts?.places}`);
+    console.log(
+      `  venues: ${venues}  active deals: ${counts?.active_deals}  gazetteer: ${counts?.places}`,
+    );
 
     if (venues === 0) {
       console.log("\n⚠ Schema is there but empty. Next: npm run db:seed");

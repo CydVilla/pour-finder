@@ -1,14 +1,12 @@
 "use client";
 
+import Link from "next/link";
+
 import clsx from "clsx";
 import dynamic from "next/dynamic";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { milesToMeters, type BoundingBox } from "@/lib/geo-math";
-import {
-  countSecondaryFilters,
-  serializeFilters,
-  type DealFilters,
-} from "@/lib/filters";
+import { countSecondaryFilters, serializeFilters, type DealFilters } from "@/lib/filters";
 import { useDealSearch } from "@/lib/use-deal-search";
 import { useGeolocation } from "@/lib/use-geolocation";
 import type { DealDTO, DealSearchResponse, VenueDTO } from "@/lib/types";
@@ -145,9 +143,10 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
 
     // Scroll the matching card into view when a marker is tapped.
     window.requestAnimationFrame(() => {
-      document
-        .getElementById(`venue-card-${venueId}`)
-        ?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "nearest" });
+      document.getElementById(`venue-card-${venueId}`)?.scrollIntoView({
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
+        block: "nearest",
+      });
     });
   }, []);
 
@@ -205,7 +204,9 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
         ) : venues.length === 0 ? (
           <EmptyState
             maxPriceCents={filters.maxPriceCents}
-            hasFilters={secondaryCount > 0 || filters.maxPriceCents !== undefined || Boolean(filters.q)}
+            hasFilters={
+              secondaryCount > 0 || filters.maxPriceCents !== undefined || Boolean(filters.q)
+            }
             isSearching={Boolean(filters.q)}
             onRelaxPrice={() =>
               update({ maxPriceCents: Math.min((filters.maxPriceCents ?? 500) * 2, 2000) })
@@ -243,7 +244,8 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
 
             {data.truncated && (
               <p className="py-3 text-center text-xs text-ink-soft">
-                Showing the {venues.length} best of {data.total}. Zoom in or filter to narrow it down.
+                Showing the {venues.length} best of {data.total}. Zoom in or filter to narrow it
+                down.
               </p>
             )}
 
@@ -280,7 +282,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
     <div className="flex h-full flex-col">
       <header className="shrink-0 border-b border-rule bg-paper">
         <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-3 py-2.5 sm:px-4">
-          <a
+          <Link
             href="/"
             className="flex min-h-11 shrink-0 items-center gap-1.5"
             aria-label="Pour Finder home"
@@ -291,7 +293,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
             <span className="wordmark hidden text-lg leading-none sm:block">
               Pour<span className="text-amber-deep">Finder</span>
             </span>
-          </a>
+          </Link>
 
           <SearchBar
             value={query}

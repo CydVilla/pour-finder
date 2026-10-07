@@ -31,7 +31,10 @@ export function AdminLogin() {
     <main className="mx-auto max-w-sm px-4 py-16">
       <h1 className="wordmark text-2xl">Moderation</h1>
       <form onSubmit={submit} className="mt-4 space-y-3">
-        <label htmlFor="admin-token" className="block text-xs font-bold uppercase tracking-wide text-ink-faint">
+        <label
+          htmlFor="admin-token"
+          className="block text-xs font-bold uppercase tracking-wide text-ink-faint"
+        >
           Admin token
         </label>
         <input
@@ -47,7 +50,11 @@ export function AdminLogin() {
             {error}
           </p>
         )}
-        <button type="submit" disabled={busy} className="pf-button pf-button-primary w-full px-4 py-3">
+        <button
+          type="submit"
+          disabled={busy}
+          className="pf-button pf-button-primary w-full px-4 py-3"
+        >
           {busy ? "Checking…" : "Sign in"}
         </button>
       </form>

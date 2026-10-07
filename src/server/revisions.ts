@@ -1,14 +1,7 @@
 import "server-only";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db, type Db } from "@/db";
-import {
-  dealRevisions,
-  deals,
-  venueRevisions,
-  venues,
-  type Deal,
-  type Venue,
-} from "@/db/schema";
+import { dealRevisions, deals, venueRevisions, type Deal, type Venue } from "@/db/schema";
 import type { SourceType } from "@/db/schema";
 
 /**
@@ -59,10 +52,7 @@ const TRACKED_DEAL_FIELDS = [
   "status",
 ] as const satisfies readonly (keyof Deal)[];
 
-export async function recordDealRevision(
-  tx: Tx,
-  input: RecordDealRevisionInput,
-): Promise<void> {
+export async function recordDealRevision(tx: Tx, input: RecordDealRevisionInput): Promise<void> {
   const [latest] = await tx
     .select({ revision: dealRevisions.revision })
     .from(dealRevisions)
@@ -71,9 +61,7 @@ export async function recordDealRevision(
     .limit(1);
 
   const changedFields = input.previous
-    ? TRACKED_DEAL_FIELDS.filter(
-        (field) => !valuesEqual(input.previous![field], input.deal[field]),
-      )
+    ? TRACKED_DEAL_FIELDS.filter((field) => !valuesEqual(input.previous![field], input.deal[field]))
     : [...TRACKED_DEAL_FIELDS];
 
   await tx.insert(dealRevisions).values({
@@ -145,7 +133,12 @@ export async function recordVenueRevision(
  * eventual price chart. Only revisions that actually moved the price.
  */
 export async function dealPriceHistory(dealId: string): Promise<
-  { priceCents: number; previousPriceCents: number | null; changedAt: string; note: string | null }[]
+  {
+    priceCents: number;
+    previousPriceCents: number | null;
+    changedAt: string;
+    note: string | null;
+  }[]
 > {
   const rows = await db
     .select({

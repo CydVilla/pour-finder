@@ -117,7 +117,10 @@ export function SearchBar({
     <div ref={wrapRef} className="relative flex-1">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <span aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint"
+          >
             ⌕
           </span>
           <input
@@ -146,7 +149,9 @@ export function SearchBar({
           onClick={onUseMyLocation}
           disabled={isLocating}
           className="pf-button pf-button-quiet shrink-0 px-3 py-2.5 text-sm"
-          aria-label={locationLabel ? `Using ${locationLabel}. Update location` : "Use my current location"}
+          aria-label={
+            locationLabel ? `Using ${locationLabel}. Update location` : "Use my current location"
+          }
           title="Use my current location"
         >
           <span aria-hidden>{isLocating ? "…" : "◎"}</span>
