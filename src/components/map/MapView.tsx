@@ -61,6 +61,13 @@ export default function MapView({
 
   const [showSearchArea, setShowSearchArea] = useState(false);
   const [styleFailed, setStyleFailed] = useState(false);
+  /*
+    Tiles can take several seconds on a phone, and on mobile the map is
+    display:none until the user taps "Map" — so the first thing they get is a
+    blank white pane with no hint that anything is coming. This flips on the
+    first rendered frame.
+  */
+  const [hasPainted, setHasPainted] = useState(false);
 
   // Latest values for handlers registered once on the map instance.
   const venuesRef = useRef(venues);
@@ -134,6 +141,10 @@ export default function MapView({
     map.on("styledata", pump);
     map.on("idle", pump);
     pump();
+
+    // `render` is the first signal that something actually reached the canvas;
+    // `load` waits on tiles and can lag the first painted frame considerably.
+    map.once("render", () => setHasPainted(true));
 
     // "Search this area" instead of refetching on every pan: cheaper, and it
     // stops results shuffling under the user's thumb mid-scroll.
@@ -355,6 +366,12 @@ export default function MapView({
         role="application"
         aria-label={`Map of ${pluralize(venues.length, "venue")} with beer deals. The list below the map has the same results in text form.`}
       />
+
+      {!hasPainted && !styleFailed && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-paper-sunk">
+          <span className="pf-card px-3 py-2 text-xs font-semibold text-ink-soft">Loading map…</span>
+        </div>
+      )}
 
       {styleFailed && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-3">

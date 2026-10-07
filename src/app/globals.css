@@ -144,7 +144,16 @@ body {
   white-space: nowrap;
   transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.pf-chip:hover:not(:disabled) {
+/*
+  The hover rule is scoped away from selected chips on purpose.
+
+  `.pf-chip:hover:not(:disabled)` is specificity (0,3,0) and the selected rule
+  below is (0,2,0), so hover used to win on a chip that was already selected:
+  it repainted the background light while the label stayed paper-white, and
+  the text disappeared under the cursor. Every selected chip had it — price,
+  day, serving type, the Filters button.
+*/
+.pf-chip:hover:not(:disabled):not([aria-pressed="true"]):not([data-active="true"]) {
   border-color: var(--color-ink-faint);
   background: var(--color-paper-sunk);
 }
@@ -153,6 +162,12 @@ body {
   background: var(--color-ink);
   border-color: var(--color-ink);
   color: var(--color-paper);
+}
+/* Selected chips still need to feel clickable — lift them instead. */
+.pf-chip[aria-pressed="true"]:hover:not(:disabled),
+.pf-chip[data-active="true"]:hover:not(:disabled) {
+  background: #2b241d;
+  border-color: #2b241d;
 }
 
 .pf-button {

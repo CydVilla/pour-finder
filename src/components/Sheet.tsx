@@ -177,11 +177,19 @@ export function Sheet({
         </header>
 
         {/*
-          `basis-0` with a minimum keeps the content area from being squeezed
-          to a few pixels by the header and footer when the viewport is short —
-          which is exactly what a keyboard does.
+          Deliberately `flex-1` on an *auto* basis, never `basis-0`.
+
+          With `basis-0` this area contributes nothing to the panel's
+          content-based height, so the panel collapsed to header + footer +
+          `min-h` — 269px on a 768px-tall window — and every sheet scrolled
+          inside a letterbox while 400+px of reserved space sat empty.
+
+          On an auto basis the panel grows with its content up to the
+          visual-viewport cap above, then this area shrinks and scrolls. The
+          `min-h` is the floor that keeps a keyboard from squeezing it to
+          nothing.
         */}
-        <div className="pf-scroll min-h-[8rem] flex-1 basis-0 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+        <div className="pf-scroll min-h-[8rem] flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {children}
         </div>
 

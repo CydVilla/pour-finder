@@ -40,7 +40,16 @@ export function formatServingSize(deal: {
     const each = individualServingSizeOz !== null ? ` × ${trimNum(individualServingSizeOz)} oz` : "";
     return `${quantity}${each}`;
   }
-  if (servingSizeOz !== null) return `${trimNum(servingSizeOz)} oz`;
+  /*
+    When a bar names the pour ("liter", "large"), that name is what a drinker
+    asks for at the bar — so it leads, and the ounces follow in parentheses as
+    the precision. Showing the number alone turned Redbones' liter into
+    "33.81 oz", which is both uglier and harder to order.
+  */
+  if (servingSizeOz !== null) {
+    const oz = `${trimNum(servingSizeOz)} oz`;
+    return servingSizeLabel ? `${servingSizeLabel} (${oz})` : oz;
+  }
   if (servingSizeLabel) return servingSizeLabel;
   return null;
 }
