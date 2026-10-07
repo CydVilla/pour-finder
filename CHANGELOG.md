@@ -6,6 +6,23 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **A test suite** — 161 tests, no DOM and no database, under two seconds.
+  Covers money, formatting, freshness, geo-math, env parsing, slugs, filter
+  URL round-trips, timezones for all 50 states, submission schemas and the
+  happy-hour table, with regressions pinned for the bugs that actually shipped.
+- **Prettier (`printWidth: 100`) and a working `npm run lint`** — `next lint`
+  dropped into an interactive setup prompt with no config present, so linting
+  could never run in CI. `npm run check` runs format, lint, typecheck and test.
+- **Price reports carry the price.** "The price is wrong" is the most common
+  report and never asked what the price actually is. It is now stored in its
+  own column and surfaced in a `/admin` queue with a one-click apply that goes
+  through `applyPriceChange`, so revision history and the confirmation reset
+  are identical to a community edit.
+- **Add a price from the venue page** you are already reading, on both the
+  with-deals and no-deals renders. The latter previously offered only a link
+  back to the home page.
+
 ### Fixed
 - **Every sheet rendered at 269px.** The scroll area was `flex-1 basis-0`, so
   it contributed nothing to the panel's content-based height and the panel

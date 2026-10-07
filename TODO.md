@@ -30,16 +30,14 @@ Running list. Newest thinking at the top of each section.
 ## Next up
 
 ### Data quality
-- [ ] **No tests at all.** `npm run test` does not exist. The pure functions are
-      where the subtle bugs have actually been — `formatServingSize` preferring
-      ounces over a stated label, the haversine cast, empty-string env parsing —
-      and they are all trivially testable with no database. Start with
-      `src/lib/{format,freshness,money,geo-math,slug}.ts`.
-- [ ] **`npm run lint` is not configured.** It drops into Next's interactive
-      ESLint setup prompt instead of linting, so it cannot run in CI.
-- [ ] **No Prettier config.** The codebase is hand-formatted at ~100 columns;
-      a bare `npx prettier --write` reflows it to 80 and produces a diff of
-      pure noise. Add `.prettierrc` with `printWidth: 100`.
+- [x] ~~Tests~~ — 161 of them over the pure logic (money, format, freshness,
+      geo-math, env, slug, filters, timezone, submission schemas, happy-hour
+      law). `npm run test`; under two seconds, no database.
+- [x] ~~`npm run lint`~~ — the ESLint CLI with Next's rules. Turning it on
+      found five unused imports and an `<a href="/">` that forced a full page
+      reload from the wordmark.
+- [x] ~~Prettier config~~ — `printWidth: 100`, matching the existing hand
+      formatting. `npm run check` runs format, lint, typecheck and test.
 - [ ] **Eddie C's may not be closed.** It is `permanently_closed` in the seed,
       but a dive-bar roundup updated 2026-05-29 lists it as current at 34
       Maverick Square. Worth a phone call before flipping it back.
@@ -75,12 +73,11 @@ Running list. Newest thinking at the top of each section.
       (they already drop out of results, but nobody is told).
 
 ### Product
-- [ ] **The report sheet pre-selects "The price is wrong"** and never asks what
-      the price actually is, while the comment box has a dedicated price field.
-      A report that captured the corrected price would be worth far more.
-- [ ] **No "add a deal here" button on the venue page.** Someone reading a
-      venue page who knows another price has no path to add it without going
-      back to the map.
+- [x] ~~Reports capture the corrected price~~ — stored in its own column and
+      surfaced in a /admin queue with a one-click apply that routes through
+      `applyPriceChange`, so history and confirmation resets are unchanged.
+- [x] ~~Add-a-price from the venue page~~ — on both renders, including the
+      no-deals one, which previously linked back to the home page.
 - [ ] **"Available now" as a default on mobile.** Most people opening this at
       6pm want what's pourable right now. Needs usage data first.
 - [ ] Price history sparkline on the venue page — `/api/deals/[id]/history`
