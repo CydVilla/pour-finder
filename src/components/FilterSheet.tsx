@@ -9,6 +9,7 @@ import {
   type DealFilters,
 } from "@/lib/filters";
 import { SERVING_TYPE_LABEL } from "@/lib/format";
+import { happyHourLaw } from "@/lib/happy-hour-law";
 import { milesToMeters } from "@/lib/geo-math";
 import { Sheet } from "./Sheet";
 
@@ -37,6 +38,13 @@ export function FilterSheet({
   resultCount,
   isLoading = false,
 }: Props) {
+  /*
+    In eight states a happy hour is not a thing a bar may legally run, so the
+    filter above it can only ever return nothing. Saying so beats letting
+    someone tick it, get an empty list, and conclude the site is broken.
+  */
+  const hourLaw = happyHourLaw(filters.state);
+
   const toggleServing = (value: (typeof servingTypeEnum.enumValues)[number]) => {
     const next = filters.servingTypes.includes(value)
       ? filters.servingTypes.filter((v) => v !== value)
@@ -89,6 +97,7 @@ export function FilterSheet({
           />
           <Toggle
             label="Happy hour only"
+            hint={hourLaw?.note}
             checked={Boolean(filters.happyHourOnly)}
             onChange={(checked) =>
               onChange({ happyHourOnly: checked || undefined, allDayOnly: undefined })

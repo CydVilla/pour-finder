@@ -7,6 +7,7 @@ import type { GeocodeResult } from "@/lib/geocode/types";
 import { SERVING_TYPE_LABEL } from "@/lib/format";
 import { parseDollarsToCents } from "@/lib/money";
 import type { SubmitResult, VenueSearchResult } from "@/lib/types";
+import { happyHourLaw } from "@/lib/happy-hour-law";
 import { Sheet } from "./Sheet";
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
   onClose: () => void;
   userLocation: { lat: number; lng: number } | null;
   /** Pre-selects a venue when the user taps "Add a deal here" on a card. */
-  presetVenue?: { id: string; name: string } | null;
+  presetVenue?: { id: string; name: string; state?: string } | null;
   onSubmitted: () => void;
 }
 
@@ -37,7 +38,9 @@ const DAYS = [
  * worse than an honest unknown.
  */
 export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmitted }: Props) {
-  const [venue, setVenue] = useState<{ id: string; name: string } | null>(presetVenue ?? null);
+  const [venue, setVenue] = useState<{ id: string; name: string; state?: string } | null>(
+    presetVenue ?? null,
+  );
   const [creatingVenue, setCreatingVenue] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -100,6 +103,9 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
     // Let the closing animation finish before wiping the form.
     window.setTimeout(reset, 250);
   };
+
+  /* The rule depends on where the bar is, not where the phone is. */
+  const hourLaw = happyHourLaw(creatingVenue ? newVenue.state : venue?.state);
 
   const priceCents = parseDollarsToCents(price);
   const hasVenue = Boolean(venue) || (creatingVenue && newVenue.name.trim() && newVenue.city.trim());
@@ -471,6 +477,15 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
                 </label>
 
                 {/*
+                  Said here rather than in a FAQ nobody opens: this is the
+                  moment someone is about to record a discount their state does
+                  not permit, and a wrong happy-hour window is worse than none.
+                */}
+                {isHappyHour && hourLaw && (
+                  <p className="-mt-1 pb-2 text-xs text-ink-soft">{hourLaw.note}</p>
+                )}
+
+                {/*
                   No days selected already means "every day" — that is what an
                   empty schedule denotes in the data model. Without saying so,
                   people tap all seven circles to express it, which is fiddly on
@@ -598,7 +613,7 @@ function VenuePicker({
   onCreateNew,
 }: {
   userLocation: { lat: number; lng: number } | null;
-  onPick: (venue: { id: string; name: string }) => void;
+  onPick: (venue: { id: string; name: string; state?: string }) => void;
   onCreateNew: (name: string) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -660,7 +675,7 @@ function VenuePicker({
             <li key={result.id}>
               <button
                 type="button"
-                onClick={() => onPick({ id: result.id, name: result.name })}
+                onClick={() => onPick({ id: result.id, name: result.name, state: result.state })}
                 className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-paper-sunk"
               >
                 <span className="min-w-0">

@@ -415,7 +415,11 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         userLocation={geo.position}
-        presetVenue={selectedVenue ? { id: selectedVenue.id, name: selectedVenue.name } : null}
+        presetVenue={
+          selectedVenue
+            ? { id: selectedVenue.id, name: selectedVenue.name, state: selectedVenue.state }
+            : null
+        }
         onSubmitted={() => undefined}
       />
 
