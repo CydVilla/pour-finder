@@ -61,6 +61,107 @@ export interface SeedVenue {
   deals: SeedDeal[];
 }
 
+/** Venues we can place on a map but cannot yet price. See the note above. */
+const ADDRESS_ONLY_VENUES: SeedVenue[] = [
+  addressOnly("Corner Pub", "162 Lincoln St", "Leather District", "02111", 42.350762, -71.058364, "approximate", "dive_bar"),
+  addressOnly("Croke Park", "268 W Broadway", "South Boston", "02127", 42.339219, -71.051286, "approximate", "dive_bar"),
+  addressOnly("The Tam", "222 Tremont St", "Theater District", "02116", 42.351516, -71.064620, "rooftop", "dive_bar"),
+  addressOnly("Tom English's Cottage", "118 Emerson St", "South Boston", "02127", 42.335912, -71.040383, "approximate", "dive_bar"),
+  addressOnly("Durty Nelly's", "108 Blackstone St", "Blackstone Block", "02109", 42.361698, -71.056575, "approximate", "pub"),
+  addressOnly("N Farra", "127 Maverick St", "East Boston", "02128", 42.370181, -71.039383, "rooftop", "dive_bar"),
+  addressOnly("Bukowski Tavern", "50 Dalton St", "Back Bay", "02115", 42.347213, -71.085410, "rooftop", "bar"),
+  addressOnly("Corner Cafe", "87 Prince St", "North End", "02113", 42.365402, -71.055956, "approximate", "dive_bar"),
+  addressOnly("Two Saints Tavern", "52 Gainsborough St", "Fenway", "02115", 42.341754, -71.087200, "approximate", "bar"),
+  addressOnly("Model Cafe", "7 N Beacon St", "Allston", "02134", 42.353752, -71.137691, "rooftop", "dive_bar"),
+  addressOnly("Lucky's Lounge", "355 Congress St", "Fort Point", "02210", 42.350042, -71.048485, "approximate", "bar"),
+  addressOnly("Dive Bar", "100 High St", "Financial District", "02110", 42.354440, -71.055623, "approximate", "dive_bar"),
+  addressOnly("Dugout Cafe", "722 Commonwealth Ave", "Kenmore", "02215", 42.349562, -71.106253, "approximate", "dive_bar"),
+  addressOnly("Beacon Hill Pub", "149 Charles St", "Beacon Hill", "02114", 42.360430, -71.070636, "rooftop", "dive_bar"),
+  addressOnly("Sterling's", "60 State St", "Financial District", "02109", 42.359678, -71.056579, "rooftop", "bar"),
+  addressOnly("Battery Park", "33 Batterymarch St", "Financial District", "02110", 42.357445, -71.054067, "rooftop", "bar"),
+];
+
+function addressOnly(
+  name: string,
+  address1: string,
+  neighborhood: string,
+  postalCode: string,
+  latitude: number,
+  longitude: number,
+  geoPrecision: GeoPrecision,
+  venueType: VenueType,
+): SeedVenue {
+  return {
+    name,
+    address1,
+    city: "Boston",
+    neighborhood,
+    state: "MA",
+    postalCode,
+    latitude,
+    longitude,
+    geoPrecision,
+    venueType,
+    notes: "Address confirmed, prices not. Know what a beer costs here? Add it.",
+    deals: [],
+  };
+}
+/**
+ * Opt-in fixtures (`npm run db:seed -- --demo`) that exercise happy-hour
+ * schedules and conditional rules. Kept out of the default seed on purpose:
+ * the real dataset should never contain invented deals.
+ */
+export const DEMO_VENUES: SeedVenue[] = [
+  {
+    name: "Example Tap Room (demo data)",
+    address1: "1 Demo St",
+    city: "Somerville",
+    neighborhood: "Union Square",
+    state: "MA",
+    latitude: 42.3796,
+    longitude: -71.0955,
+    geoPrecision: "approximate",
+    venueType: "bar",
+    notes: "DEMO DATA — not a real venue. Seeded with --demo to exercise schedules.",
+    deals: [
+      {
+        beerName: "House lager",
+        beerStyle: "Lager",
+        priceCents: 300,
+        servingType: "draft",
+        servingSizeOz: 16,
+        isHappyHour: true,
+        description: "DEMO DATA — happy-hour window for testing 'Available now'.",
+        schedule: [{ days: [1, 2, 3, 4, 5], startTime: "16:00", endTime: "18:00" }],
+        sourceType: "other",
+        verifiedDaysAgo: 1,
+        verificationCount: 6,
+      },
+      {
+        beerName: "Narragansett",
+        brand: "Narragansett",
+        priceCents: 200,
+        servingType: "can",
+        isConditional: true,
+        ruleDescription: "DEMO DATA — $2 during Red Sox games.",
+        restrictions: "One per customer.",
+        sourceType: "other",
+        verifiedDaysAgo: 3,
+      },
+      {
+        beerName: "Bucket of light lager",
+        priceCents: 1800,
+        servingType: "bucket",
+        quantity: 5,
+        individualServingSizeOz: 12,
+        description: "DEMO DATA — bucket of 5, exercises quantity-based value math.",
+        sourceType: "other",
+        verifiedDaysAgo: 2,
+      },
+    ],
+  },
+];
+
 export const SEED_VENUES: SeedVenue[] = [
   {
     name: "Coogan's",
@@ -644,60 +745,32 @@ export const SEED_VENUES: SeedVenue[] = [
       },
     ],
   },
-];
 
-/**
- * Opt-in fixtures (`npm run db:seed -- --demo`) that exercise happy-hour
- * schedules and conditional rules. Kept out of the default seed on purpose:
- * the real dataset should never contain invented deals.
- */
-export const DEMO_VENUES: SeedVenue[] = [
-  {
-    name: "Example Tap Room (demo data)",
-    address1: "1 Demo St",
-    city: "Somerville",
-    neighborhood: "Union Square",
-    state: "MA",
-    latitude: 42.3796,
-    longitude: -71.0955,
-    geoPrecision: "approximate",
-    venueType: "bar",
-    notes: "DEMO DATA — not a real venue. Seeded with --demo to exercise schedules.",
-    deals: [
-      {
-        beerName: "House lager",
-        beerStyle: "Lager",
-        priceCents: 300,
-        servingType: "draft",
-        servingSizeOz: 16,
-        isHappyHour: true,
-        description: "DEMO DATA — happy-hour window for testing 'Available now'.",
-        schedule: [{ days: [1, 2, 3, 4, 5], startTime: "16:00", endTime: "18:00" }],
-        sourceType: "other",
-        verifiedDaysAgo: 1,
-        verificationCount: 6,
-      },
-      {
-        beerName: "Narragansett",
-        brand: "Narragansett",
-        priceCents: 200,
-        servingType: "can",
-        isConditional: true,
-        ruleDescription: "DEMO DATA — $2 during Red Sox games.",
-        restrictions: "One per customer.",
-        sourceType: "other",
-        verifiedDaysAgo: 3,
-      },
-      {
-        beerName: "Bucket of light lager",
-        priceCents: 1800,
-        servingType: "bucket",
-        quantity: 5,
-        individualServingSizeOz: 12,
-        description: "DEMO DATA — bucket of 5, exercises quantity-based value math.",
-        sourceType: "other",
-        verifiedDaysAgo: 2,
-      },
-    ],
-  },
+  /* ------------------------------------------------------------------
+     Addresses only — deliberately no deals.
+
+     These came from a Boston dive-bar roundup updated 2026-05-29 that
+     lists full street addresses but states no prices. The price data
+     that *is* findable on the open web for these bars is from 2012-2014
+     (a $2 Bud Light at SideBar, a $3 Narragansett at Sullivan's Tap),
+     and a twelve-year-old price rendered in 48pt type is a lie no
+     freshness badge can undo. So the prices are left for the people who
+     are actually standing in the bar.
+
+     A venue with no deals is invisible on the list but IS returned by
+     the add-a-deal venue search, which is the entire point: someone who
+     wants to report "$4 at Croke Park" picks it with the right address
+     and coordinates already attached, instead of hand-typing a
+     duplicate that geocodes to the middle of the city.
+
+     Coordinates are from Nominatim against the published street
+     address. `geoPrecision` is "rooftop" only where OSM returned a
+     bar/pub/restaurant at that point — i.e. the venue itself is
+     confirmed there — and "approximate" where only the building
+     matched. L Street Tavern (658 E 8th St) is omitted: Nominatim could
+     not resolve it, and a guessed coordinate is worse than no row.
+
+     Source: https://bostoninsider.org/best-dive-bars-in-boston
+     ------------------------------------------------------------------ */
+  ...ADDRESS_ONLY_VENUES,
 ];
