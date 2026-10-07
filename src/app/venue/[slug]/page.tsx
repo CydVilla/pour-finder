@@ -66,10 +66,23 @@ export async function generateMetadata({
       : `Beer prices at ${venue.name} in ${venue.city}, ${venue.state}.`,
     alternates: { canonical: `/venue/${venue.slug}` },
     openGraph: { title, url: `${siteUrl()}/venue/${venue.slug}`, type: "website" },
-    // A closed venue's page stays reachable for history, but shouldn't compete
-    // in search for a bar that no longer exists.
+    /*
+      Two reasons to stay out of the index, both "there is nothing here worth
+      ranking", and both self-correcting:
+
+        - permanently closed: the page stays reachable for history, but must
+          not compete in search for a bar that no longer exists.
+        - no active deal: the page's whole value is a price, and it has none.
+          Seeded address-only venues start here and become indexable the
+          moment someone adds one.
+
+      This mirrors `listIndexableVenueSlugs`, which keys the sitemap on the
+      same condition — the two must not disagree about what is indexable.
+    */
     robots:
-      venue.status === "permanently_closed" ? { index: false, follow: true } : undefined,
+      venue.status === "permanently_closed" || active.length === 0
+        ? { index: false, follow: true }
+        : undefined,
   };
 }
 
