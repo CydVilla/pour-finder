@@ -6,7 +6,43 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **Every sheet rendered at 269px.** The scroll area was `flex-1 basis-0`, so
+  it contributed nothing to the panel's content-based height and the panel
+  sized itself to header + footer + `min-h` — Filters, Add-a-deal and Report
+  all scrolled inside a letterbox while 400+px of the height they had already
+  reserved sat empty. On an auto basis the panel grows to the visual-viewport
+  cap, then the body shrinks and scrolls.
+- **Selected chips went invisible under the cursor.** `.pf-chip:hover` is
+  specificity (0,3,0) against `.pf-chip[aria-pressed="true"]` at (0,2,0), so
+  hover repainted the background light while the label stayed paper-white.
+  Hover is now scoped away from selected chips.
+- **The Filters button was off-screen on a phone.** It sat 119px past the right
+  edge at 375px wide, inside a scroll rail with no visible scrollbar, which put
+  day, distance, serving type, beer style and happy hour out of reach on the
+  most common phone width. Pinned outside the rail; verified to 320px.
+- **A stated pour size lost to its own ounces.** Redbones' liter read
+  "33.81 oz" instead of "liter (33.81 oz)".
+- **Venue card titles were h3 directly under the page h1**, leaving a hole in
+  the heading outline on the home, state and city pages. They are h2.
+
 ### Added
+- **State happy-hour law surfaced where it matters.** Massachusetts — the
+  launch state — has banned happy hour since 1984, and seven other states ban
+  or restrict timed drink discounts, so the "Happy hour only" filter could only
+  ever return nothing there and the submit form invited people to record a
+  discount no bar may legally run. Both now show the state's actual rule
+  (`src/lib/happy-hour-law.ts`). Indiana and Oklahoma are recorded as
+  restricted rather than banned: Indiana's ban was repealed effective
+  2024-07-01, which is why the widely reproduced "eight states" lists are wrong.
+- **A "Loading map…" state.** Tiles take several seconds on a phone, and the
+  map pane is `display:none` until "Map" is tapped, so the first thing people
+  saw was a blank white rectangle.
+- **16 more Boston bars, addresses only.** Verified street addresses and
+  coordinates with no prices attached — the price data findable on the open web
+  for these bars is from 2012-2014. They stay off the public list but are
+  returned by the add-a-deal venue search, so a submitter picks their bar
+  instead of hand-typing a duplicate.
 - **Site assets.** SVG favicon (`src/app/icon.svg`) and a generated 1200×630
   Open Graph share card (`src/app/opengraph-image.tsx`, rendered by `next/og`
   from system fonts, so no binary asset and no webfont fetch).

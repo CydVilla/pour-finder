@@ -30,6 +30,23 @@ Running list. Newest thinking at the top of each section.
 ## Next up
 
 ### Data quality
+- [ ] **No tests at all.** `npm run test` does not exist. The pure functions are
+      where the subtle bugs have actually been — `formatServingSize` preferring
+      ounces over a stated label, the haversine cast, empty-string env parsing —
+      and they are all trivially testable with no database. Start with
+      `src/lib/{format,freshness,money,geo-math,slug}.ts`.
+- [ ] **`npm run lint` is not configured.** It drops into Next's interactive
+      ESLint setup prompt instead of linting, so it cannot run in CI.
+- [ ] **No Prettier config.** The codebase is hand-formatted at ~100 columns;
+      a bare `npx prettier --write` reflows it to 80 and produces a diff of
+      pure noise. Add `.prettierrc` with `printWidth: 100`.
+- [ ] **Eddie C's may not be closed.** It is `permanently_closed` in the seed,
+      but a dive-bar roundup updated 2026-05-29 lists it as current at 34
+      Maverick Square. Worth a phone call before flipping it back.
+- [ ] **Seed prices are 1-8 months old**, so almost every card reads "Getting
+      old — worth double-checking" on a first visit. That is honest and the
+      design works, but the fix is confirmations, which is what the r/boston
+      post is for.
 - [x] ~~Menu photo uploads~~ — shipped, backed by Vercel Blob with R2 supported
       as an alternative. Direct presigned PUT, moderation queue, reject deletes.
 - [x] ~~Thumbnails~~ — generated client-side in the same decode pass as the
@@ -58,14 +75,20 @@ Running list. Newest thinking at the top of each section.
       (they already drop out of results, but nobody is told).
 
 ### Product
+- [ ] **The report sheet pre-selects "The price is wrong"** and never asks what
+      the price actually is, while the comment box has a dedicated price field.
+      A report that captured the corrected price would be worth far more.
+- [ ] **No "add a deal here" button on the venue page.** Someone reading a
+      venue page who knows another price has no path to add it without going
+      back to the map.
 - [ ] **"Available now" as a default on mobile.** Most people opening this at
       6pm want what's pourable right now. Needs usage data first.
 - [ ] Price history sparkline on the venue page — `/api/deals/[id]/history`
       already returns the data.
 - [ ] Share sheet / OG images per venue.
 - [ ] Saved/favourite bars (localStorage first; no account needed).
-- [ ] `/deals-under-5/[city]` landing pages — the query layer supports it, only
-      routing and copy are missing.
+- [x] ~~`/deals-under-N/[state]/[city]` landing pages~~ — shipped, with
+      breadcrumbs and an ItemList.
 
 ### Scale
 - [ ] **Materialize confidence** into a column with a scheduled refresh. It's
@@ -90,7 +113,7 @@ Running list. Newest thinking at the top of each section.
       trusting it for anything beyond flagging.
 
 ### Legal / compliance
-- [ ] Pick a licence before the repo goes public.
+- [x] ~~Pick a licence~~ — MIT, in `LICENSE`.
 - [ ] Privacy page describing the anonymous hash and that no location is stored.
 - [ ] Revisit the 21+ notice if any state requires a hard age gate.
 - [ ] Terms covering user-submitted content and takedown requests.
