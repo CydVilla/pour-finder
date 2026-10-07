@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { AddDealSheet } from "./AddDealSheet";
+import { AddDealButton } from "./AddDealButton";
 import { CommentsPanel } from "./CommentsPanel";
 import { DealRow } from "./DealRow";
 import { MapLink } from "./MapLink";
@@ -15,10 +14,8 @@ import type { DealDTO, VenueDTO } from "@/lib/types";
  * are labelled rather than hidden) plus the comment thread.
  */
 export function VenueDetail({ venue: initial }: { venue: VenueDTO }) {
-  const router = useRouter();
   const [venue, setVenue] = useState(initial);
   const [reportTarget, setReportTarget] = useState<{ deal: DealDTO; venue: VenueDTO } | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
 
   const patchDeal = (dealId: string, patch: Partial<DealDTO>) =>
     setVenue((current) => ({
@@ -112,20 +109,16 @@ export function VenueDetail({ venue: initial }: { venue: VenueDTO }) {
 
           {/*
             Someone reading this page is the single most likely person to know
-            another price here, and until now the only way to add one was to go
-            back to the map and search for the bar they were already looking at.
-            The venue is pre-filled, so this is two taps and a number.
+            another price here. The venue is pre-filled, so this is two taps and
+            a number.
           */}
-          <button
-            type="button"
-            onClick={() => setAddOpen(true)}
-            className="pf-button pf-button-quiet mt-4 w-full px-4 py-2.5 text-sm"
-          >
-            <span aria-hidden>＋</span>
-            {active.length > 0
-              ? "Know another price here?"
-              : `Add the first price for ${venue.name}`}
-          </button>
+          <div className="mt-4">
+            <AddDealButton
+              venue={{ id: venue.id, name: venue.name, state: venue.state }}
+              isFirstPrice={active.length === 0}
+              className="pf-button pf-button-quiet w-full px-4 py-2.5 text-sm"
+            />
+          </div>
 
           {past.length > 0 && (
             <details className="mt-4">
@@ -179,15 +172,6 @@ export function VenueDetail({ venue: initial }: { venue: VenueDTO }) {
         open={reportTarget !== null}
         onClose={() => setReportTarget(null)}
         target={reportTarget}
-      />
-
-      <AddDealSheet
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        presetVenue={{ id: venue.id, name: venue.name, state: venue.state }}
-        /* The venue is already chosen, so there is nothing to sort by distance. */
-        userLocation={null}
-        onSubmitted={() => router.refresh()}
       />
     </>
   );

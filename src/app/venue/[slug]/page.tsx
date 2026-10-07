@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AddDealButton } from "@/components/AddDealButton";
 import { VenueDetail } from "@/components/VenueDetail";
 import { siteUrl } from "@/lib/env";
 import { parseFilters } from "@/lib/filters";
@@ -137,12 +138,20 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
               {[venue.address1, venue.city, venue.state].filter(Boolean).join(", ")}
             </p>
             <p className="mt-4 text-sm text-ink-soft">
-              We don&apos;t have any current beer deals listed here.{" "}
-              <Link href="/" className="underline underline-offset-2">
-                Add one
-              </Link>{" "}
-              if you know a price.
+              We don&apos;t have any current beer deals listed here — just the address.
             </p>
+            {/*
+              This used to be a link to the home page, which meant searching
+              again for the bar you were already looking at. It is also the
+              page every address-only venue lands on, so it is the single most
+              valuable place in the app to make adding a price easy.
+            */}
+            <div className="mt-4">
+              <AddDealButton
+                venue={{ id: venue.id, name: venue.name, state: venue.state }}
+                isFirstPrice
+              />
+            </div>
           </div>
         )}
 
