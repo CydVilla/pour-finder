@@ -320,9 +320,14 @@ export default function MapView({
     const bounds = new maplibregl.LngLatBounds();
     for (const venue of venues) bounds.extend([venue.longitude, venue.latitude]);
 
+    // Single-pane layouts float the List/Map switch over the bottom of the
+    // map; 60px left the southernmost pin underneath it. Read per fit, not
+    // once: a Duo changes layout when it is folded or unfolded.
+    const underSwitch = window.matchMedia("(min-width: 48rem)").matches ? 0 : 56;
+
     programmaticMoveRef.current = true;
     map.fitBounds(bounds as LngLatBoundsLike, {
-      padding: { top: 60, bottom: 60, left: 40, right: 40 },
+      padding: { top: 60, bottom: 60 + underSwitch, left: 40, right: 40 },
       maxZoom: 15,
       duration: prefersReducedMotion() ? 0 : 500,
     });

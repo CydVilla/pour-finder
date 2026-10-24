@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { forwardRef, useEffect, useRef, useState } from "react";
+import { CircleCheck, Plus } from "lucide-react";
 import { servingTypeEnum, venueTypeEnum } from "@/db/schema";
 import type { GeocodeResult } from "@/lib/geocode/types";
 import { SERVING_TYPE_LABEL } from "@/lib/format";
@@ -285,9 +286,7 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
     >
       {result ? (
         <div className="space-y-4 py-4 text-center">
-          <div aria-hidden className="text-5xl">
-            🍻
-          </div>
+          <CircleCheck aria-hidden className="mx-auto size-12 text-fresh" strokeWidth={1.75} />
           <p className="text-lg font-semibold">{result.message}</p>
           {result.possibleDuplicates.length > 0 && (
             <div className="pf-card mx-auto max-w-sm p-3 text-left text-sm">
@@ -521,7 +520,7 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
                             : [...current, day.value],
                         )
                       }
-                      className="pf-chip min-h-9 w-11 justify-center px-0 py-1.5 text-xs"
+                      className="pf-chip w-11 justify-center px-0 py-1.5 text-xs"
                     >
                       {day.label}
                     </button>
@@ -530,7 +529,7 @@ export function AddDealSheet({ open, onClose, userLocation, presetVenue, onSubmi
                     <button
                       type="button"
                       onClick={() => setDays([])}
-                      className="pf-chip min-h-9 px-3 py-1.5 text-xs"
+                      className="pf-chip px-3 py-1.5 text-xs"
                     >
                       Clear
                     </button>
@@ -733,7 +732,8 @@ function VenuePicker({
             onClick={() => onCreateNew(trimmed)}
             className="pf-button pf-button-amber mt-2.5 w-full px-4 py-2.5 text-sm"
           >
-            ＋ Add &ldquo;{trimmed}&rdquo;
+            <Plus className="size-4" strokeWidth={2.5} />
+            Add &ldquo;{trimmed}&rdquo;
           </button>
         </div>
       ) : (

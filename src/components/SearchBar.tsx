@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import clsx from "clsx";
+import { LoaderCircle, LocateFixed, MapPin, Search } from "lucide-react";
 import type { GeocodeResult } from "@/lib/geocode/types";
 
 export interface PlacePick {
@@ -117,15 +118,10 @@ export function SearchBar({
     <div ref={wrapRef} className="relative flex-1">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint"
-          >
-            ⌕
-          </span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-ink-faint" />
           <input
             type="search"
-            className="pf-input pl-8"
+            className="pf-input pl-9.5"
             placeholder="Bar, beer, city or ZIP"
             aria-label="Search for a bar, a beer, or a place"
             aria-expanded={open && suggestions.length > 0}
@@ -154,7 +150,11 @@ export function SearchBar({
           }
           title="Use my current location"
         >
-          <span aria-hidden>{isLocating ? "…" : "◎"}</span>
+          {isLocating ? (
+            <LoaderCircle className="size-4.5 animate-spin" />
+          ) : (
+            <LocateFixed className="size-4.5" />
+          )}
           <span className="hidden sm:inline">{isLocating ? "Locating" : "Near me"}</span>
         </button>
       </div>
@@ -179,9 +179,7 @@ export function SearchBar({
                   index === activeIndex ? "bg-paper-sunk" : "bg-transparent",
                 )}
               >
-                <span aria-hidden className="text-ink-faint">
-                  ⌖
-                </span>
+                <MapPin className="size-4 shrink-0 text-ink-faint" />
                 <span className="truncate">{place.label}</span>
               </button>
             </li>

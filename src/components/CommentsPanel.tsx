@@ -127,7 +127,7 @@ export function CommentsPanel({ venue, deal }: Props) {
               aria-checked={signal === option.id}
               data-active={signal === option.id ? "true" : undefined}
               onClick={() => setSignal(option.id)}
-              className="pf-chip min-h-9 px-3 py-1.5 text-xs"
+              className="pf-chip px-3 py-1.5 text-xs"
             >
               {option.label}
             </button>

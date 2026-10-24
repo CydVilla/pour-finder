@@ -80,7 +80,8 @@ city/ZIP search is served by a built-in offline gazetteer.
 |---|---|
 | [`docs/SETUP.md`](docs/SETUP.md) | Runbook: local dev, deploy, every env var, every asset, failure modes |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How it fits together, and why |
-| [`docs/adr/`](docs/adr/) | Decision records — ten decisions with the consequences each one costs |
+| [`docs/DESIGN.md`](docs/DESIGN.md) | The UI standard: HIG type ramp, 44pt targets, Lucide icons, screen sizes incl. iPhone Duo |
+| [`docs/adr/`](docs/adr/) | Decision records — eleven decisions with the consequences each one costs |
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Deploying for $0 |
 | [`CHANGELOG.md`](CHANGELOG.md) | What changed |
 | [`TODO.md`](TODO.md) | What's next, and known limitations |

@@ -23,3 +23,4 @@ ADRs are immutable. When a decision changes, add a new ADR and mark the old one
 | [0008](0008-two-query-discovery.md) | Two queries for discovery, not one | Accepted |
 | [0009](0009-explicit-comment-signal.md) | Explicit comment signal over text inference | Accepted |
 | [0010](0010-config-must-not-break-builds.md) | Configuration must not break builds | Accepted |
+| [0011](0011-hig-and-lucide-as-the-ui-standard.md) | Apple's HIG and Lucide as the UI standard | Accepted |

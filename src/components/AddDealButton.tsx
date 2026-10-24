@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { AddDealSheet } from "./AddDealSheet";
 
 interface Props {
@@ -30,7 +31,7 @@ export function AddDealButton({ venue, isFirstPrice = false, className }: Props)
         onClick={() => setOpen(true)}
         className={className ?? "pf-button pf-button-amber w-full px-4 py-2.5 text-sm"}
       >
-        <span aria-hidden>＋</span>
+        <Plus className="size-4" strokeWidth={2.5} />
         {isFirstPrice ? `Add the first price for ${venue.name}` : "Know another price here?"}
       </button>
 

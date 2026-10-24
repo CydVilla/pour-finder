@@ -7,6 +7,22 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **iPhone Duo support.** Unfolded (~890×626) the app now shows list and map
+  side by side, split 50/50 so the divide lands on the crease; it used to show
+  a single stretched list with the map behind a toggle. Sheets dock to the
+  right half instead of centring over the hinge, so the list stays visible
+  while filtering. Chrome is one row from 768px up, and on phones the count
+  and sort scroll with the list, which gets the folded screen (~466×678) from
+  about one and a half visible cards to two and a half. Unfolding mid-session
+  refits the map. Android foldables that report viewport segments get the
+  exact hinge position.
+- **A UI standard** ([docs/DESIGN.md](docs/DESIGN.md), ADR-0011): Apple's HIG
+  type ramp mapped onto Tailwind's size names, 44pt touch targets everywhere,
+  and Lucide icons replacing every Unicode glyph and emoji icon. The header
+  carries the app icon as its mark.
+- **A real 404 page** with the site header and a way back, replacing Next's
+  stock "This page could not be found".
+- **A header on venue pages.** The only way home used to be a breadcrumb.
 - **A test suite** — 161 tests, no DOM and no database, under two seconds.
   Covers money, formatting, freshness, geo-math, env parsing, slugs, filter
   URL round-trips, timezones for all 50 states, submission schemas and the
@@ -24,6 +40,17 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   back to the home page.
 
 ### Fixed
+- **The List/Map switch followed readers into the page text.** It was
+  `position: fixed`, so on the state, city and price pages, which embed the
+  app above crawlable text, it floated over that text and toggled a pane that
+  was no longer on screen. It is now anchored to the app.
+- **The two-pane map opened on a hardcoded view** of downtown Boston, with
+  results cut off at its edges, until something else triggered a fit. It now
+  frames the results on first paint.
+- **The southernmost pin hid under the List/Map switch** after a fit; the fit
+  now pads for the switch when it is showing.
+- **"Size unknown" was said three times** on a deal row ("size ?", "size
+  unknown", "— value unknown"). Once is honest; three times read as an error.
 - **Every sheet rendered at 269px.** The scroll area was `flex-1 basis-0`, so
   it contributed nothing to the panel's content-based height and the panel
   sized itself to header + footer + `min-h` — Filters, Add-a-deal and Report

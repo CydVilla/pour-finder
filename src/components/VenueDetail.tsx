@@ -149,7 +149,7 @@ export function VenueDetail({ venue: initial }: { venue: VenueDTO }) {
               kind="photo"
               title="Price evidence"
               emptyPrompt="No photos yet. A shot of the menu or the board settles any argument about a price."
-              uploadLabel="📷 Add a photo of the price"
+              uploadLabel="Add a photo of the price"
               purpose="price_evidence"
             />
 
@@ -159,7 +159,7 @@ export function VenueDetail({ venue: initial }: { venue: VenueDTO }) {
               kind="video"
               title="Pours"
               emptyPrompt="No clips yet. Share a short video of your pint here."
-              uploadLabel="🎥 Share a pour"
+              uploadLabel="Share a pour"
               purpose="pour"
             />
 

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChevronRight } from "lucide-react";
 import { AddDealButton } from "@/components/AddDealButton";
+import { SiteHeader } from "@/components/SiteHeader";
 import { VenueDetail } from "@/components/VenueDetail";
 import { siteUrl } from "@/lib/env";
 import { parseFilters } from "@/lib/filters";
@@ -99,7 +101,8 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
 
   return (
     <>
-      <main className="mx-auto min-h-full max-w-3xl px-4 py-6">
+      <SiteHeader />
+      <main className="mx-auto max-w-3xl px-4 py-6">
         <nav aria-label="Breadcrumb" className="text-sm text-ink-soft">
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
@@ -107,13 +110,17 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
                 Cheap beer
               </Link>
             </li>
-            <li aria-hidden>›</li>
+            <li aria-hidden>
+              <ChevronRight className="size-3.5 text-ink-faint" />
+            </li>
             <li>
               <Link href={`/${stateSlug}`} className="hover:text-ink hover:underline">
                 {venue.state}
               </Link>
             </li>
-            <li aria-hidden>›</li>
+            <li aria-hidden>
+              <ChevronRight className="size-3.5 text-ink-faint" />
+            </li>
             <li>
               <Link
                 href={`/${stateSlug}/${venue.citySlug}`}
@@ -122,7 +129,9 @@ export default async function VenuePage({ params }: { params: Promise<{ slug: st
                 {venue.city}
               </Link>
             </li>
-            <li aria-hidden>›</li>
+            <li aria-hidden>
+              <ChevronRight className="size-3.5 text-ink-faint" />
+            </li>
             <li aria-current="page" className="font-semibold text-ink">
               {venue.name}
             </li>

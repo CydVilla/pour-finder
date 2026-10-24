@@ -110,7 +110,7 @@ export function MediaGallery({
                     decoding="async"
                   />
                 )}
-                <figcaption className="mt-1 text-[11px] leading-tight text-ink-faint">
+                <figcaption className="mt-1 text-2xs text-ink-faint">
                   {item.assertedPriceCents !== null && (
                     <span className="font-semibold text-ink">
                       {formatCents(item.assertedPriceCents)}{" "}

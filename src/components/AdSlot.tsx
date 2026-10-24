@@ -59,7 +59,7 @@ export function AdSlot({ slot, height = 250, className }: Props) {
       className={clsx("overflow-hidden rounded-[14px] border border-rule bg-paper-sunk", className)}
       style={{ minHeight: height }}
     >
-      <p className="px-3 pt-2 text-[10px] font-bold uppercase tracking-wide text-ink-faint">
+      <p className="px-3 pt-2 text-2xs font-bold uppercase tracking-wide text-ink-faint">
         Advertisement
       </p>
       <ins

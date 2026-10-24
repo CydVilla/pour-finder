@@ -1,5 +1,6 @@
 "use client";
 
+import { Beer } from "lucide-react";
 import { formatCents } from "@/lib/money";
 
 interface Props {
@@ -27,9 +28,7 @@ export function EmptyState({
 }: Props) {
   return (
     <div className="px-4 py-12 text-center">
-      <div aria-hidden className="mx-auto mb-4 text-5xl">
-        🍺
-      </div>
+      <Beer aria-hidden className="mx-auto mb-4 size-12 text-amber-deep" strokeWidth={1.75} />
       <h2 className="wordmark text-xl text-ink">
         {isSearching ? "Nothing matched that search" : "No deals in this area yet"}
       </h2>
