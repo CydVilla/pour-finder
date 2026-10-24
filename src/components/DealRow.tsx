@@ -4,6 +4,7 @@ import { formatServingDescription } from "@/lib/format";
 import { formatPricePerOunce } from "@/lib/money";
 import { sourceLabel } from "@/lib/freshness";
 import type { DealDTO } from "@/lib/types";
+import { ThumbsUp } from "lucide-react";
 import { FreshnessBadge } from "./FreshnessBadge";
 import { PriceBlock } from "./PriceBlock";
 import { VerifyControls } from "./VerifyControls";
@@ -24,25 +25,26 @@ export function DealRow({ deal, onVerified, onReport, expanded = false }: Props)
     <li className="flex gap-3 py-3">
       <div className="w-16 shrink-0 text-right">
         <PriceBlock priceCents={deal.priceCents} currency={deal.currency} size="md" />
-        {perOunce ? (
-          <span className="mt-0.5 block text-[11px] font-medium text-ink-faint tabular-nums">
+        {/*
+          No placeholder when the size is unknown: the serving line already
+          says "size unknown", and saying it a third time ("size ?", "— value
+          unknown") read as an error rather than an honest gap.
+        */}
+        {perOunce && (
+          <span className="mt-0.5 block text-2xs font-medium text-ink-faint tabular-nums">
             {perOunce}
           </span>
-        ) : (
-          <span className="mt-0.5 block text-[11px] text-ink-faint">size&nbsp;?</span>
         )}
       </div>
 
       <div className="min-w-0 flex-1">
         <p className="font-semibold leading-tight text-ink">{deal.beerName}</p>
 
-        <p className="mt-0.5 text-sm text-ink-soft">
+        <p
+          className="mt-0.5 text-sm text-ink-soft"
+          title={sizeUnknown ? "Nobody has confirmed the pour size" : undefined}
+        >
           {formatServingDescription(deal)}
-          {sizeUnknown && (
-            <span className="ml-1 text-ink-faint" title="Nobody has confirmed the pour size">
-              — value unknown
-            </span>
-          )}
         </p>
 
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -76,8 +78,9 @@ export function DealRow({ deal, onVerified, onReport, expanded = false }: Props)
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           <FreshnessBadge freshness={deal.freshness} daysSinceVerified={deal.daysSinceVerified} />
           {deal.verificationCount > 0 && (
-            <span className="text-ink-soft">
-              <span aria-hidden>👍</span> {deal.verificationCount}{" "}
+            <span className="inline-flex items-center gap-1 text-ink-soft">
+              <ThumbsUp className="size-3.5" />
+              {deal.verificationCount}{" "}
               {deal.verificationCount === 1 ? "confirmation" : "confirmations"}
             </span>
           )}

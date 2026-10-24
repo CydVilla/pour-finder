@@ -5,6 +5,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import dynamic from "next/dynamic";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Plus } from "lucide-react";
 import { milesToMeters, type BoundingBox } from "@/lib/geo-math";
 import { countSecondaryFilters, serializeFilters, type DealFilters } from "@/lib/filters";
 import { useDealSearch } from "@/lib/use-deal-search";
@@ -13,8 +14,9 @@ import type { DealDTO, DealSearchResponse, VenueDTO } from "@/lib/types";
 import { AdSlot } from "./AdSlot";
 import { AddDealSheet } from "./AddDealSheet";
 import { EmptyState } from "./EmptyState";
-import { FilterBar } from "./FilterBar";
+import { FilterBar, ResultSummary } from "./FilterBar";
 import { FilterSheet } from "./FilterSheet";
+import { LogoMark } from "./LogoMark";
 import { ReportSheet } from "./ReportSheet";
 import { SearchBar, type PlacePick } from "./SearchBar";
 import { VenueCard, VenueCardSkeleton } from "./VenueCard";
@@ -33,6 +35,13 @@ interface Props {
 }
 
 type MobileView = "list" | "map";
+
+/**
+ * Where list and map stop taking turns and sit side by side. Matches `md`:
+ * 768px clears the iPhone Duo unfolded (~890px) and stays above it folded
+ * (~466px) and in Split View (~445px). Keep in sync with `.pf-list-pane`.
+ */
+const SPLIT_QUERY = "(min-width: 48rem)";
 
 const DEFAULT_NEARBY_RADIUS_METERS = Math.round(milesToMeters(5));
 
@@ -135,6 +144,26 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
     [update],
   );
 
+  /*
+    Unfolding a Duo widens the viewport from ~466 to ~890px with no rotation
+    and no reload, and the map pane appears for the first time — sized and
+    centred for a canvas it never had. Refit it to the results when that
+    happens. Listened for, never read once: the width changes mid-session.
+
+    The same goes for a first paint that is already two-pane: the map used to
+    open on a hardcoded downtown-Boston view, with results cut off at its
+    edges, until something else happened to trigger a fit.
+  */
+  useEffect(() => {
+    const query = window.matchMedia(SPLIT_QUERY);
+    if (query.matches) setFitNonce((n) => n + 1);
+    const onChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setFitNonce((n) => n + 1);
+    };
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+
   /* ------------------------------------------- list <-> map selection */
 
   const selectVenue = useCallback((venueId: string | null) => {
@@ -186,9 +215,18 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
     <div ref={listRef} className="pf-scroll h-full overflow-y-auto overscroll-contain">
       {/*
         Bottom padding clears the floating List/Map switch on mobile, so the
-        last card is never trapped underneath it. Desktop has no switch.
+        last card is never trapped underneath it. The split layout has no switch.
       */}
-      <div className="space-y-2.5 p-3 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] sm:p-4 sm:pb-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] lg:pb-4">
+      <div className="space-y-2.5 p-3 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] sm:p-4 sm:pb-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] md:pb-4">
+        <ResultSummary
+          className="md:hidden"
+          resultCount={data.total}
+          isLoading={isLoading}
+          sort={filters.sort}
+          hasOrigin={hasOrigin}
+          onSort={(sort) => update({ sort })}
+        />
+
         {error && (
           <p role="alert" className="pf-card p-3 text-sm font-medium text-outdated">
             {error}
@@ -255,7 +293,8 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
                 onClick={() => setAddOpen(true)}
                 className="pf-button pf-button-quiet px-4 py-2.5 text-sm"
               >
-                <span aria-hidden>＋</span> Know a cheaper one? Add it
+                <Plus className="size-4" strokeWidth={2.5} />
+                Know a cheaper one? Add it
               </button>
             </div>
           </>
@@ -279,7 +318,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
   );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <header className="shrink-0 border-b border-rule bg-paper">
         <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-3 py-2.5 sm:px-4">
           <Link
@@ -287,9 +326,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
             className="flex min-h-11 shrink-0 items-center gap-1.5"
             aria-label="Pour Finder home"
           >
-            <span aria-hidden className="text-xl">
-              🍺
-            </span>
+            <LogoMark className="size-7" />
             <span className="wordmark hidden text-lg leading-none sm:block">
               Pour<span className="text-amber-deep">Finder</span>
             </span>
@@ -310,7 +347,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
             onClick={() => setAddOpen(true)}
             className="pf-button pf-button-amber shrink-0 px-3 py-2.5 text-sm"
           >
-            <span aria-hidden>＋</span>
+            <Plus className="size-4.5" strokeWidth={2.5} />
             <span className="hidden sm:inline">Add a deal</span>
             <span className="sr-only sm:hidden">Add a beer deal</span>
           </button>
@@ -335,16 +372,16 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
       />
 
       {/*
-        One layout, one map instance. Mobile shows a single pane at a time and
-        desktop shows both side by side, but the MapView is never mounted
-        twice - two WebGL contexts would double memory and tile requests, and
-        the hidden one renders at zero size.
+        One layout, one map instance. Phones show a single pane at a time; from
+        `md` up (an unfolded Duo, a tablet, a desktop) both sit side by side.
+        The MapView is never mounted twice - two WebGL contexts would double
+        memory and tile requests, and the hidden one renders at zero size.
       */}
       <div className="flex min-h-0 flex-1">
         <div
           className={clsx(
-            "min-h-0 w-full lg:w-[clamp(380px,32vw,480px)] lg:shrink-0 lg:border-r lg:border-rule",
-            mobileView === "map" && "hidden lg:block",
+            "pf-list-pane min-h-0 md:shrink-0 md:border-r md:border-rule",
+            mobileView === "map" && "hidden md:block",
           )}
         >
           {list}
@@ -353,14 +390,14 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
         <div
           className={clsx(
             "relative min-h-0 min-w-0 flex-1",
-            mobileView === "list" && "hidden lg:block",
+            mobileView === "list" && "hidden md:block",
           )}
         >
           {map}
 
           {/* Marker tap on mobile surfaces the same card the list uses. */}
           {selectedVenue && (
-            <div className="pf-sheet-in absolute inset-x-0 bottom-0 z-20 p-3 pb-[max(4.75rem,calc(env(safe-area-inset-bottom)+4rem))] lg:hidden">
+            <div className="pf-sheet-in absolute inset-x-0 bottom-0 z-20 p-3 pb-[max(4.75rem,calc(env(safe-area-inset-bottom)+4rem))] md:hidden">
               <VenueCard
                 venue={selectedVenue}
                 isSelected
@@ -373,8 +410,15 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
         </div>
       </div>
 
-      {/* Mobile view switch, thumb-reachable, above the safe area. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center pb-[max(0.85rem,env(safe-area-inset-bottom))] lg:hidden">
+      {/*
+        Mobile view switch, thumb-reachable, above the safe area.
+
+        Absolute to this app, not fixed to the viewport: the state, city and
+        price pages embed the app in an 85dvh box with crawlable text below
+        it, and a fixed switch followed the reader down into that text,
+        floating over it and toggling a pane that was no longer on screen.
+      */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center pb-[max(0.85rem,env(safe-area-inset-bottom))] md:hidden">
         <div
           role="tablist"
           aria-label="View results as"

@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import Link from "next/link";
 import { useState } from "react";
+import { ThumbsUp } from "lucide-react";
 import { formatDistance, formatServingDescription, pluralize } from "@/lib/format";
 import { freshnessHint } from "@/lib/freshness";
 import { formatCents, formatPricePerOunce } from "@/lib/money";
@@ -71,7 +72,7 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
           >
             <PriceBlock priceCents={headline.priceCents} currency={headline.currency} size="lg" />
             {perOunce && (
-              <span className="mt-1 text-[10px] font-semibold text-amber-deep tabular-nums">
+              <span className="mt-1 text-2xs font-semibold text-amber-deep tabular-nums">
                 {perOunce}
               </span>
             )}
@@ -84,7 +85,7 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
               left a hole in the outline for anyone navigating by heading. The
               size is set explicitly, so the level carries no visual weight.
             */}
-              <h2 className="wordmark min-w-0 truncate text-[1.05rem] leading-snug text-ink">
+              <h2 className="wordmark min-w-0 truncate text-base text-ink">
                 {/*
                 -my-1.5/py-1.5 grows the tap area without moving anything: a
                 17px inline target is easy to miss on a phone, and a miss here
@@ -123,8 +124,10 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
                 daysSinceVerified={headline.daysSinceVerified}
               />
               {headline.verificationCount > 0 && (
-                <span className="text-ink-soft">
-                  <span aria-hidden>👍</span> {headline.verificationCount}
+                <span className="inline-flex items-center gap-1 text-ink-soft">
+                  <ThumbsUp className="size-3.5" />
+                  <span className="sr-only">Confirmed by</span>
+                  {headline.verificationCount}
                 </span>
               )}
               {headline.isHappyHour && (
@@ -198,7 +201,7 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
               kind="photo"
               title="Price evidence"
               emptyPrompt="No photos yet — a shot of the menu proves this price better than any tap."
-              uploadLabel="📷 Add a photo of the price"
+              uploadLabel="Add a photo of the price"
               purpose="price_evidence"
               dealId={headline.id}
             />

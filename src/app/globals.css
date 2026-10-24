@@ -38,6 +38,41 @@
     system-ui, sans-serif;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 
+  /*
+    Type ramp: Apple's Human Interface Guidelines text styles, mapped onto
+    Tailwind's names so every existing `text-sm` / `text-lg` already lands on
+    a HIG size instead of an in-between one. The iPhone is the primary device,
+    and its native ramp is what makes this read as an app rather than a web
+    page that happens to fit. See docs/DESIGN.md.
+
+      2xs  Caption 2    11/13      lg   Title 3      20/25
+      xs   Caption 1    12/16      xl   Title 2      22/28
+      sm   Subheadline  15/20      2xl  Title 1      28/34
+      base Body         17/22      3xl  Large Title  34/41
+
+    No arbitrary `text-[Npx]` outside the price hero, which is display type
+    and scales with the length of the number (see PriceBlock).
+  */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 0.8125rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.375rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.5625rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.125rem;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 2.5625rem;
+
+  /* HIG minimum hit target: 44pt in both dimensions, for every control. */
+  --spacing-touch: 2.75rem;
+
   --radius-card: 14px;
   --shadow-card: 0 1px 2px rgb(23 19 15 / 0.06), 0 4px 14px -8px rgb(23 19 15 / 0.18);
   --shadow-lift: 0 2px 4px rgb(23 19 15 / 0.08), 0 12px 28px -12px rgb(23 19 15 / 0.3);
@@ -55,6 +90,8 @@ body {
 }
 
 body {
+  font-size: var(--text-base);
+  line-height: var(--text-base--line-height);
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -135,8 +172,8 @@ body {
   justify-content: center;
   gap: 0.35rem;
   /* This app gets used one-handed, in a dark bar, while walking. Every chip
-     clears a 40px touch target regardless of how short its label is. */
-  min-height: 2.5rem;
+     clears the 44pt HIG touch target regardless of how short its label is. */
+  min-height: var(--spacing-touch);
   border: 1.5px solid var(--color-rule-strong);
   background: var(--color-card);
   color: var(--color-ink);
@@ -179,7 +216,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  min-height: 2.5rem;
+  min-height: var(--spacing-touch);
   font-weight: 700;
   border-radius: 10px;
   transition:
@@ -236,7 +273,7 @@ body {
 @layer components {
   select.pf-control,
   .pf-input {
-    min-height: 2.5rem;
+    min-height: var(--spacing-touch);
   }
 
   .pf-input {
@@ -284,6 +321,45 @@ body {
 }
 .pf-scroll-x::-webkit-scrollbar {
   display: none;
+}
+/* With no scrollbar, a chip cut off by the edge is the only hint the rail
+   scrolls; fading that edge makes the cut read as deliberate. */
+.pf-scroll-x-fade {
+  mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+}
+
+/* ------------------------------------------------------------ foldables */
+
+/*
+  `spread`: a wide, short screen between phone and laptop. It exists for the
+  iPhone Duo unfolded (~890x626 CSS px), and also catches a phone in landscape
+  and an iPad in Slide Over. Overlays dock to one half here instead of
+  centring, so nothing straddles the crease of a folding screen.
+
+  Safari exposes neither the Viewport Segments nor the Device Posture API, so
+  the page cannot locate the hinge; the 50/50 split below is what lands on it.
+  Browsers that do report segments (Chrome on Android foldables) get the exact
+  hinge position instead.
+*/
+@custom-variant spread (@media (min-width: 48rem) and (max-width: 63.999rem) and (orientation: landscape));
+
+.pf-list-pane {
+  width: 100%;
+}
+@media (min-width: 48rem) {
+  .pf-list-pane {
+    width: 50%;
+  }
+}
+@media (min-width: 64rem) {
+  .pf-list-pane {
+    width: clamp(380px, 32vw, 480px);
+  }
+}
+@media (horizontal-viewport-segments: 2) {
+  .pf-list-pane {
+    width: env(viewport-segment-width 0 0, 50%);
+  }
 }
 
 /* ------------------------------------------------------------------- map */

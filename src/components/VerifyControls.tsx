@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import { useState, useTransition } from "react";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import type { DealDTO } from "@/lib/types";
 
 interface Props {
@@ -71,11 +72,12 @@ export function VerifyControls({ deal, onVerified, onReport, compact = false }: 
           onClick={() => submit("still_available")}
           aria-label={`Confirm ${deal.beerName} is still available`}
           className={clsx(
-            "pf-button min-h-9 px-3 py-1.5",
+            "pf-button px-3 py-1.5",
             done === "still_available" ? "pf-button-primary" : "pf-button-quiet",
           )}
         >
-          <span aria-hidden>👍</span> Yes
+          <ThumbsUp className="size-4" />
+          Yes
         </button>
 
         <button
@@ -84,17 +86,18 @@ export function VerifyControls({ deal, onVerified, onReport, compact = false }: 
           onClick={() => submit("no_longer_available")}
           aria-label={`Report that ${deal.beerName} is no longer available`}
           className={clsx(
-            "pf-button min-h-9 px-3 py-1.5",
+            "pf-button px-3 py-1.5",
             done === "no_longer_available" ? "pf-button-primary" : "pf-button-quiet",
           )}
         >
-          <span aria-hidden>👎</span> Gone
+          <ThumbsDown className="size-4" />
+          Gone
         </button>
 
         <button
           type="button"
           onClick={onReport}
-          className="min-h-9 px-1 text-ink-faint underline underline-offset-2 hover:text-ink"
+          className="min-h-touch px-1 text-ink-faint underline underline-offset-2 hover:text-ink"
         >
           Something else wrong?
         </button>

@@ -1,7 +1,8 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { X } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -135,7 +136,7 @@ export function Sheet({
       className={clsx(
         "fixed inset-0 z-50 flex",
         placement === "bottom" ? "items-end sm:items-center" : "items-center",
-        "justify-center",
+        "justify-center spread:items-start spread:justify-end",
       )}
     >
       <button
@@ -154,13 +155,24 @@ export function Sheet({
         tabIndex={-1}
         className={clsx(
           "pf-sheet-in relative flex w-full flex-col bg-paper shadow-lift outline-none",
-          "rounded-t-2xl sm:rounded-2xl",
+          "max-h-(--sheet-max-h) rounded-t-2xl sm:rounded-2xl",
           size === "lg" ? "sm:max-w-2xl" : "sm:max-w-lg",
+          /*
+            On a spread (an unfolded Duo) a centred dialog sits on the crease,
+            with its title and primary button split down the middle. Dock it
+            to the right half as a full-height side sheet instead: it covers
+            the map, and the list on the left stays visible and updates live
+            as filters change.
+          */
+          "spread:h-(--sheet-full-h) spread:max-h-none spread:w-1/2 spread:max-w-none spread:rounded-none spread:rounded-l-2xl",
         )}
-        style={{
-          // 92% of whatever is genuinely visible, keyboard included.
-          maxHeight: availableHeight ? `${Math.round(availableHeight * 0.92)}px` : "92dvh",
-        }}
+        style={
+          {
+            // 92% of whatever is genuinely visible, keyboard included.
+            "--sheet-max-h": availableHeight ? `${Math.round(availableHeight * 0.92)}px` : "92dvh",
+            "--sheet-full-h": availableHeight ? `${Math.round(availableHeight)}px` : "100dvh",
+          } as CSSProperties
+        }
       >
         <header className="flex items-center justify-between gap-3 border-b border-rule px-4 py-3 sm:px-5">
           <h2 id={titleId} className={clsx("wordmark text-lg", hideTitle && "sr-only")}>
@@ -169,10 +181,10 @@ export function Sheet({
           <button
             type="button"
             onClick={onClose}
-            className="pf-button pf-button-quiet -mr-1 size-9 shrink-0 text-lg"
+            className="pf-button pf-button-quiet -mr-1 size-touch shrink-0"
             aria-label="Close"
           >
-            <span aria-hidden>×</span>
+            <X className="size-5" />
           </button>
         </header>
 

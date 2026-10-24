@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Camera, Video } from "lucide-react";
 import type { MediaPurpose } from "@/db/schema";
 import { MEDIA_LIMITS, formatBytes, kindForMimeType } from "@/lib/media-limits";
 import { ImageProcessingError, processImage, processVideo } from "@/lib/image-processing";
@@ -264,6 +265,8 @@ export function MediaUploader({
         disabled={state === "uploading" || state === "processing"}
         className="pf-button pf-button-quiet w-full px-4 py-2.5 text-sm"
       >
+        {state === "idle" &&
+          (accept === "video" ? <Video className="size-4" /> : <Camera className="size-4" />)}
         {state === "uploading"
           ? `Uploading… ${progress}%`
           : state === "processing"

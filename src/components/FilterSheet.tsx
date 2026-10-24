@@ -257,7 +257,7 @@ function ChipRow({
             aria-checked={multi ? undefined : active}
             data-active={!multi && active ? "true" : undefined}
             onClick={() => onToggle(option.id)}
-            className={clsx("pf-chip min-h-9 px-3 py-1.5 text-sm", disabled && "opacity-50")}
+            className={clsx("pf-chip px-3 py-1.5 text-sm", disabled && "opacity-50")}
           >
             {option.label}
           </button>
