@@ -33,11 +33,7 @@ export function FilterBar({
 }: Props) {
   return (
     <div className="border-b border-rule bg-paper/95 backdrop-blur">
-      {/*
-        One row from `md` up. An unfolded Duo is ~626px tall before Safari's
-        toolbars, and a second row of chrome cost it a whole card.
-      */}
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-2 px-3 py-2 sm:px-4 md:flex-row md:items-center md:gap-4">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-2 px-3 py-2 sm:px-4 discovery-wide:flex-row discovery-wide:items-center discovery-wide:gap-4">
         {/*
           Filters is pinned outside the scrolling rail, not appended to it.
 
@@ -47,7 +43,7 @@ export function FilterBar({
           distance, serving, beer style, happy hour) was undiscoverable. The
           price chips may scroll; the way into everything else may not.
         */}
-        <div className="flex min-w-0 items-center gap-1.5 md:flex-1">
+        <div className="flex min-w-0 items-center gap-1.5 discovery-wide:flex-1">
           <div
             className="pf-scroll-x pf-scroll-x-fade -mx-1 flex min-w-0 flex-1 items-center gap-1.5 px-1 py-0.5 pr-6"
             role="group"
@@ -98,7 +94,7 @@ export function FilterBar({
         </div>
 
         <ResultSummary
-          className="hidden md:flex md:shrink-0"
+          className="hidden discovery-wide:flex discovery-wide:shrink-0"
           resultCount={resultCount}
           isLoading={isLoading}
           sort={filters.sort}
@@ -113,10 +109,7 @@ export function FilterBar({
 /**
  * The result count and the sort.
  *
- * In the filter bar from `md` up; on a phone it is the first row of the list
- * instead and scrolls away with it. Pinned, it was a third row of fixed chrome
- * on a folded Duo — ~678px tall before Safari's toolbars — and left room for
- * barely one and a half cards.
+ * Compact screens put this row at the top of the scrollable list.
  */
 export function ResultSummary({
   resultCount,
@@ -149,7 +142,7 @@ export function ResultSummary({
       <label className="flex items-center gap-1.5 text-xs text-ink-soft">
         <span className="font-semibold">Sort</span>
         <select
-          className="pf-control rounded-md border-[1.5px] border-rule-strong bg-card px-2 py-1.5 text-xs font-semibold text-ink"
+          className="pf-control max-w-[49vw] rounded-md border-[1.5px] border-rule-strong bg-card px-2 py-1.5 font-semibold text-ink"
           value={sort}
           onChange={(event) => onSort(event.target.value as SortId)}
         >

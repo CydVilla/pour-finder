@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 
 interface Props {
@@ -36,8 +36,14 @@ export function Sheet({
 }: Props) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  const restoreFocusRef = useRef<HTMLElement | null>(null);
-  const [availableHeight, setAvailableHeight] = useState<number | null>(null);
+  const closeRef = useRef(onClose);
+  const [visibleViewport, setVisibleViewport] = useState<{ top: number; height: number } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
 
   /**
    * Size to the *visual* viewport, not `dvh`.
@@ -53,14 +59,17 @@ export function Sheet({
     const vv = window.visualViewport;
     if (!vv) return;
 
-    const sync = () => setAvailableHeight(vv.height);
+    const sync = () => {
+      // Respect pinch-zoom instead of laying the dialog out again at every scale.
+      setVisibleViewport(vv.scale === 1 ? { top: vv.offsetTop, height: vv.height } : null);
+    };
     sync();
     vv.addEventListener("resize", sync);
     vv.addEventListener("scroll", sync);
     return () => {
       vv.removeEventListener("resize", sync);
       vv.removeEventListener("scroll", sync);
-      setAvailableHeight(null);
+      setVisibleViewport(null);
     };
   }, [open]);
 
@@ -70,21 +79,26 @@ export function Sheet({
     const panel = panelRef.current;
     if (!panel) return;
 
+    let scrollTimer: number;
     const onFocusIn = (event: FocusEvent) => {
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
       // Wait for the keyboard animation before measuring.
-      window.setTimeout(() => target.scrollIntoView({ block: "nearest" }), 300);
+      window.clearTimeout(scrollTimer);
+      scrollTimer = window.setTimeout(() => target.scrollIntoView({ block: "nearest" }), 300);
     };
 
     panel.addEventListener("focusin", onFocusIn);
-    return () => panel.removeEventListener("focusin", onFocusIn);
+    return () => {
+      panel.removeEventListener("focusin", onFocusIn);
+      window.clearTimeout(scrollTimer);
+    };
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
 
-    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    const previousFocus = document.activeElement as HTMLElement | null;
 
     const { body } = document;
     const previousOverflow = body.style.overflow;
@@ -92,12 +106,12 @@ export function Sheet({
 
     // Focus the panel itself, not the first control: announcing the dialog
     // title beats dumping the user into a text input.
-    const focusTimer = window.setTimeout(() => panelRef.current?.focus(), 0);
+    const focusTimer = window.setTimeout(() => panelRef.current?.focus({ preventScroll: true }), 0);
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.stopPropagation();
-        onClose();
+        closeRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -125,24 +139,23 @@ export function Sheet({
       document.removeEventListener("keydown", onKeyDown, true);
       window.clearTimeout(focusTimer);
       body.style.overflow = previousOverflow;
-      restoreFocusRef.current?.focus?.();
+      previousFocus?.focus({ preventScroll: true });
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
     <div
       className={clsx(
-        "fixed inset-0 z-50 flex",
+        "pf-sheet-viewport fixed inset-x-0 top-0 z-50 flex h-dvh",
         placement === "bottom" ? "items-end sm:items-center" : "items-center",
         "justify-center spread:items-start spread:justify-end",
       )}
+      style={visibleViewport ?? undefined}
     >
-      <button
-        type="button"
-        aria-label="Close"
-        tabIndex={-1}
+      <div
+        aria-hidden="true"
         className="pf-fade-in absolute inset-0 bg-ink/45 backdrop-blur-[2px]"
         onClick={onClose}
       />
@@ -154,8 +167,8 @@ export function Sheet({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={clsx(
-          "pf-sheet-in relative flex w-full flex-col bg-paper shadow-lift outline-none",
-          "max-h-(--sheet-max-h) rounded-t-2xl sm:rounded-2xl",
+          "pf-sheet-in relative flex max-h-full w-full flex-col bg-paper shadow-lift outline-none",
+          "rounded-t-2xl sm:rounded-2xl",
           size === "lg" ? "sm:max-w-2xl" : "sm:max-w-lg",
           /*
             On a spread (an unfolded Duo) a centred dialog sits on the crease,
@@ -164,17 +177,10 @@ export function Sheet({
             the map, and the list on the left stays visible and updates live
             as filters change.
           */
-          "spread:h-(--sheet-full-h) spread:max-h-none spread:w-1/2 spread:max-w-none spread:rounded-none spread:rounded-l-2xl",
+          "spread:h-full spread:w-1/2 spread:max-w-none spread:rounded-none spread:rounded-l-2xl",
         )}
-        style={
-          {
-            // 92% of whatever is genuinely visible, keyboard included.
-            "--sheet-max-h": availableHeight ? `${Math.round(availableHeight * 0.92)}px` : "92dvh",
-            "--sheet-full-h": availableHeight ? `${Math.round(availableHeight)}px` : "100dvh",
-          } as CSSProperties
-        }
       >
-        <header className="flex items-center justify-between gap-3 border-b border-rule px-4 py-3 sm:px-5">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-rule px-4 py-2 sm:px-5">
           <h2 id={titleId} className={clsx("wordmark text-lg", hideTitle && "sr-only")}>
             {title}
           </h2>
@@ -188,25 +194,12 @@ export function Sheet({
           </button>
         </header>
 
-        {/*
-          Deliberately `flex-1` on an *auto* basis, never `basis-0`.
-
-          With `basis-0` this area contributes nothing to the panel's
-          content-based height, so the panel collapsed to header + footer +
-          `min-h` — 269px on a 768px-tall window — and every sheet scrolled
-          inside a letterbox while 400+px of reserved space sat empty.
-
-          On an auto basis the panel grows with its content up to the
-          visual-viewport cap above, then this area shrinks and scrolls. The
-          `min-h` is the floor that keeps a keyboard from squeezing it to
-          nothing.
-        */}
-        <div className="pf-scroll min-h-[8rem] flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+        <div className="pf-scroll min-h-0 flex-auto overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
           {children}
         </div>
 
         {footer && (
-          <footer className="border-t border-rule bg-paper px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5">
+          <footer className="shrink-0 border-t border-rule bg-paper px-4 py-2 sm:px-5">
             {footer}
           </footer>
         )}

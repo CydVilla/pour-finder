@@ -18,6 +18,7 @@ import { VerifyControls } from "./VerifyControls";
 
 interface Props {
   venue: VenueDTO;
+  idPrefix?: string;
   isSelected: boolean;
   onSelect: (venueId: string) => void;
   onVerified: (dealId: string, patch: Partial<DealDTO>) => void;
@@ -29,8 +30,16 @@ interface Props {
  * walk there, and nothing else. The extra deals and the confirm/report
  * controls live one tap away, so the scan stays fast.
  */
-export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }: Props) {
+export function VenueCard({
+  venue,
+  idPrefix = "venue",
+  isSelected,
+  onSelect,
+  onVerified,
+  onReport,
+}: Props) {
   const [expanded, setExpanded] = useState(false);
+  const detailsId = `${idPrefix}-details-${venue.id}`;
 
   const headline = venue.deals[0];
   const others = venue.deals.slice(1);
@@ -42,7 +51,7 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
 
   return (
     <article
-      id={`venue-card-${venue.id}`}
+      id={`${idPrefix}-card-${venue.id}`}
       aria-current={isSelected ? "true" : undefined}
       className={clsx(
         "pf-card scroll-mt-4 overflow-hidden transition-shadow",
@@ -157,7 +166,7 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
           onClick={() => setExpanded((v) => !v)}
           className="min-h-11 w-full py-3 text-left text-xs font-semibold text-ink-soft hover:text-ink"
           aria-expanded={expanded}
-          aria-controls={`venue-details-${venue.id}`}
+          aria-controls={expanded ? detailsId : undefined}
         >
           {expanded
             ? "Hide details"
@@ -168,7 +177,7 @@ export function VenueCard({ venue, isSelected, onSelect, onVerified, onReport }:
       </div>
 
       {expanded && (
-        <div id={`venue-details-${venue.id}`} className="px-3 pb-3">
+        <div id={detailsId} className="px-3 pb-3">
           {others.length > 0 && (
             <>
               <div className="pf-perforation" />

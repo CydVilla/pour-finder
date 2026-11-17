@@ -23,24 +23,21 @@ interface Options {
  */
 export function useDealSearch({ initial, filters, skipFirstFetch }: Options) {
   const [data, setData] = useState<DealSearchResponse>(initial);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!skipFirstFetch);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
-  const sequenceRef = useRef(0);
-  const abortRef = useRef<AbortController | null>(null);
-  const skipRef = useRef(skipFirstFetch);
   const key = serializeFilters(filters).toString();
+  const initialKey = useRef(skipFirstFetch ? key : null);
+  const sequenceRef = useRef(0);
 
   useEffect(() => {
-    if (skipRef.current) {
-      skipRef.current = false;
-      return;
-    }
+    if (initialKey.current === key && attempt === 0) return;
+    initialKey.current = null;
 
     const sequence = ++sequenceRef.current;
-    abortRef.current?.abort();
     const controller = new AbortController();
-    abortRef.current = controller;
+    const isCurrent = () => !controller.signal.aborted && sequence === sequenceRef.current;
 
     setIsLoading(true);
     setError(null);
@@ -50,21 +47,20 @@ export function useDealSearch({ initial, filters, skipFirstFetch }: Options) {
         const response = await fetch(`/api/deals?${key}&rid=${sequence}`, {
           signal: controller.signal,
         });
-        if (sequence !== sequenceRef.current) return; // a newer request won
+        if (!isCurrent()) return;
 
         if (!response.ok) {
-          setError("Couldn't load deals. Try again?");
+          setError("Couldn't load deals.");
           return;
         }
 
         const payload = (await response.json()) as DealSearchResponse;
-        if (sequence !== sequenceRef.current) return;
+        if (!isCurrent()) return;
         setData(payload);
-      } catch (caught) {
-        if ((caught as Error).name === "AbortError") return;
-        setError("Couldn't reach the server.");
+      } catch {
+        if (isCurrent()) setError("Couldn't reach the server.");
       } finally {
-        if (sequence === sequenceRef.current) setIsLoading(false);
+        if (isCurrent()) setIsLoading(false);
       }
     }, 250);
 
@@ -72,7 +68,9 @@ export function useDealSearch({ initial, filters, skipFirstFetch }: Options) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [key]);
+  }, [key, attempt]);
+
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   /**
    * Applies a confirmation locally so the badge updates the instant somebody
@@ -87,7 +85,7 @@ export function useDealSearch({ initial, filters, skipFirstFetch }: Options) {
     }));
   }, []);
 
-  return { data, isLoading, error, patchDeal };
+  return { data, isLoading, error, patchDeal, retry };
 }
 
 function applyToVenue(venue: VenueDTO, dealId: string, patch: Partial<DealDTO>): VenueDTO {

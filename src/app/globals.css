@@ -78,18 +78,25 @@
   --shadow-lift: 0 2px 4px rgb(23 19 15 / 0.08), 0 12px 28px -12px rgb(23 19 15 / 0.3);
 }
 
+/* A compact landscape viewport still gets one pane, even edge to edge. */
+@custom-variant discovery-wide {
+  @media (min-width: 48rem), (min-width: 41rem) and (min-height: 30rem) {
+    @slot;
+  }
+}
+
 :root {
   color-scheme: light;
-  /* Real viewport height on mobile browsers with a collapsing URL bar. */
-  --app-vh: 100dvh;
-}
-
-html,
-body {
-  height: 100%;
+  --pf-safe-top: env(safe-area-inset-top, 0px);
+  --pf-safe-right: env(safe-area-inset-right, 0px);
+  --pf-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --pf-safe-left: env(safe-area-inset-left, 0px);
 }
 
 body {
+  height: 100vh;
+  height: 100dvh;
+  padding: var(--pf-safe-top) var(--pf-safe-right) var(--pf-safe-bottom) var(--pf-safe-left);
   font-size: var(--text-base);
   line-height: var(--text-base--line-height);
   background: var(--color-paper);
@@ -111,7 +118,7 @@ body {
 
 .skip-link {
   position: absolute;
-  left: 0.5rem;
+  left: calc(var(--pf-safe-left) + 0.5rem);
   top: -4rem;
   z-index: 100;
   background: var(--color-ink);
@@ -274,6 +281,8 @@ body {
   select.pf-control,
   .pf-input {
     min-height: var(--spacing-touch);
+    /* Keep Safari from zooming into controls on focus. */
+    font-size: var(--text-base);
   }
 
   .pf-input {
@@ -283,9 +292,6 @@ body {
     border-radius: 10px;
     padding: 0.6rem 0.8rem;
     color: var(--color-ink);
-    /* iOS zooms inputs below 16px on focus — so never pair `text-sm` or
-       smaller with .pf-input, because that now genuinely overrides this. */
-    font-size: 16px;
   }
   .pf-input::placeholder {
     color: var(--color-ink-faint);
@@ -332,21 +338,18 @@ body {
 
 /*
   `spread`: a wide, short screen between phone and laptop. It exists for the
-  iPhone Duo unfolded (~890x626 CSS px), and also catches a phone in landscape
-  and an iPad in Slide Over. Overlays dock to one half here instead of
+  iPhone Duo inner display in landscape and similarly sized tablet windows. Overlays dock to one half here instead of
   centring, so nothing straddles the crease of a folding screen.
 
-  Safari exposes neither the Viewport Segments nor the Device Posture API, so
-  the page cannot locate the hinge; the 50/50 split below is what lands on it.
-  Browsers that do report segments (Chrome on Android foldables) get the exact
-  hinge position instead.
+  The default split gives each pane half the available width. When the browser
+  reports horizontal viewport segments, use the first segment's actual width.
 */
 @custom-variant spread (@media (min-width: 48rem) and (max-width: 63.999rem) and (orientation: landscape));
 
 .pf-list-pane {
   width: 100%;
 }
-@media (min-width: 48rem) {
+@media (min-width: 48rem), (min-width: 41rem) and (min-height: 30rem) {
   .pf-list-pane {
     width: 50%;
   }
@@ -398,6 +401,11 @@ body {
 }
 
 /* --------------------------------------------------------------- motion */
+
+.pf-sheet-viewport {
+  padding: max(0.5rem, var(--pf-safe-top)) var(--pf-safe-right) var(--pf-safe-bottom)
+    var(--pf-safe-left);
+}
 
 @keyframes pf-sheet-in {
   from {

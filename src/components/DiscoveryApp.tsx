@@ -32,20 +32,14 @@ const MapView = dynamic(() => import("./map/MapView"), {
 interface Props {
   initialData: DealSearchResponse;
   initialFilters: DealFilters;
+  initialSearchFailed?: boolean;
 }
 
 type MobileView = "list" | "map";
 
-/**
- * Where list and map stop taking turns and sit side by side. Matches `md`:
- * 768px clears the iPhone Duo unfolded (~890px) and stays above it folded
- * (~466px) and in Split View (~445px). Keep in sync with `.pf-list-pane`.
- */
-const SPLIT_QUERY = "(min-width: 48rem)";
-
 const DEFAULT_NEARBY_RADIUS_METERS = Math.round(milesToMeters(5));
 
-export function DiscoveryApp({ initialData, initialFilters }: Props) {
+export function DiscoveryApp({ initialData, initialFilters, initialSearchFailed = false }: Props) {
   const [filters, setFilters] = useState<DealFilters>(initialFilters);
   const [query, setQuery] = useState(initialFilters.q ?? "");
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
@@ -55,19 +49,39 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
   const [reportTarget, setReportTarget] = useState<{ deal: DealDTO; venue: VenueDTO } | null>(null);
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
   const [mapFocus, setMapFocus] = useState<MapFocus | null>(null);
-  const [fitNonce, setFitNonce] = useState(0);
+  const [hasShownMap, setHasShownMap] = useState(false);
 
   const geo = useGeolocation();
   const listRef = useRef<HTMLDivElement>(null);
-  const { data, isLoading, error, patchDeal } = useDealSearch({
+  const mapPaneRef = useRef<HTMLDivElement>(null);
+  const { data, isLoading, error, patchDeal, retry } = useDealSearch({
     initial: initialData,
     filters,
-    skipFirstFetch: true,
+    skipFirstFetch: !initialSearchFailed,
   });
 
   const venues = data.venues;
   const hasOrigin = filters.lat !== undefined && filters.lng !== undefined;
   const secondaryCount = countSecondaryFilters(filters);
+
+  // Load WebGL and map tiles only once the map has room to render. Keep the
+  // same instance on later resizes so a fold doesn't reset the camera.
+  useEffect(() => {
+    const pane = mapPaneRef.current;
+    if (hasShownMap || !pane) return;
+    if (pane.clientWidth > 0 && pane.clientHeight > 0) {
+      setHasShownMap(true);
+      return;
+    }
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry && entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+        setHasShownMap(true);
+        observer.disconnect();
+      }
+    });
+    observer.observe(pane);
+    return () => observer.disconnect();
+  }, [hasShownMap, mobileView]);
 
   /* ------------------------------------------------------- URL syncing */
 
@@ -144,26 +158,6 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
     [update],
   );
 
-  /*
-    Unfolding a Duo widens the viewport from ~466 to ~890px with no rotation
-    and no reload, and the map pane appears for the first time — sized and
-    centred for a canvas it never had. Refit it to the results when that
-    happens. Listened for, never read once: the width changes mid-session.
-
-    The same goes for a first paint that is already two-pane: the map used to
-    open on a hardcoded downtown-Boston view, with results cut off at its
-    edges, until something else happened to trigger a fit.
-  */
-  useEffect(() => {
-    const query = window.matchMedia(SPLIT_QUERY);
-    if (query.matches) setFitNonce((n) => n + 1);
-    const onChange = (event: MediaQueryListEvent) => {
-      if (event.matches) setFitNonce((n) => n + 1);
-    };
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-
   /* ------------------------------------------- list <-> map selection */
 
   const selectVenue = useCallback((venueId: string | null) => {
@@ -172,7 +166,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
 
     // Scroll the matching card into view when a marker is tapped.
     window.requestAnimationFrame(() => {
-      document.getElementById(`venue-card-${venueId}`)?.scrollIntoView({
+      listRef.current?.querySelector(`#venue-card-${CSS.escape(venueId)}`)?.scrollIntoView({
         behavior: prefersReducedMotion() ? "auto" : "smooth",
         block: "nearest",
       });
@@ -213,13 +207,9 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
 
   const list = (
     <div ref={listRef} className="pf-scroll h-full overflow-y-auto overscroll-contain">
-      {/*
-        Bottom padding clears the floating List/Map switch on mobile, so the
-        last card is never trapped underneath it. The split layout has no switch.
-      */}
-      <div className="space-y-2.5 p-3 pb-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] sm:p-4 sm:pb-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] md:pb-4">
+      <div className="space-y-2.5 p-3 sm:p-4">
         <ResultSummary
-          className="md:hidden"
+          className="discovery-wide:hidden"
           resultCount={data.total}
           isLoading={isLoading}
           sort={filters.sort}
@@ -227,19 +217,13 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
           onSort={(sort) => update({ sort })}
         />
 
-        {error && (
-          <p role="alert" className="pf-card p-3 text-sm font-medium text-outdated">
-            {error}
-          </p>
-        )}
-
         {isLoading && venues.length === 0 ? (
           <>
             <VenueCardSkeleton />
             <VenueCardSkeleton />
             <VenueCardSkeleton />
           </>
-        ) : venues.length === 0 ? (
+        ) : venues.length === 0 && !error ? (
           <EmptyState
             maxPriceCents={filters.maxPriceCents}
             hasFilters={
@@ -263,14 +247,17 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
             onClear={clearFilters}
             onAddDeal={() => setAddOpen(true)}
           />
-        ) : (
+        ) : venues.length > 0 ? (
           <>
             {venues.map((venue, index) => (
               <Fragment key={venue.id}>
                 <VenueCard
                   venue={venue}
                   isSelected={venue.id === selectedVenueId}
-                  onSelect={selectVenue}
+                  onSelect={(venueId) => {
+                    selectVenue(venueId);
+                    setMobileView("map");
+                  }}
                   onVerified={patchDeal}
                   onReport={(deal, v) => setReportTarget({ deal, venue: v })}
                 />
@@ -298,7 +285,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
               </button>
             </div>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -311,7 +298,6 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
       onSearchArea={searchArea}
       userLocation={geo.position}
       focus={mapFocus}
-      fitNonce={fitNonce}
       isLoading={isLoading}
       className="relative size-full"
     />
@@ -323,7 +309,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
         <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-3 py-2.5 sm:px-4">
           <Link
             href="/"
-            className="flex min-h-11 shrink-0 items-center gap-1.5"
+            className="flex min-h-11 min-w-touch shrink-0 items-center justify-center gap-1.5"
             aria-label="Pour Finder home"
           >
             <LogoMark className="size-7" />
@@ -345,7 +331,7 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
           <button
             type="button"
             onClick={() => setAddOpen(true)}
-            className="pf-button pf-button-amber shrink-0 px-3 py-2.5 text-sm"
+            className="pf-button pf-button-amber min-w-touch shrink-0 px-3 py-2.5 text-sm"
           >
             <Plus className="size-4.5" strokeWidth={2.5} />
             <span className="hidden sm:inline">Add a deal</span>
@@ -353,9 +339,14 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
           </button>
         </div>
 
-        {geo.state === "denied" && (
-          <p className="border-t border-rule bg-paper-sunk px-3 py-1.5 text-xs text-ink-soft sm:px-4">
-            Location is off — search a city or ZIP instead.
+        {(geo.state === "denied" || geo.state === "unavailable") && (
+          <p
+            role="status"
+            className="border-t border-rule bg-paper-sunk px-3 py-1.5 text-xs text-ink-soft sm:px-4"
+          >
+            {geo.state === "denied"
+              ? "Location is off — search a city or ZIP instead."
+              : "Couldn't get your location. Try again or search a city or ZIP."}
           </p>
         )}
       </header>
@@ -371,69 +362,67 @@ export function DiscoveryApp({ initialData, initialFilters }: Props) {
         onOpenFilters={() => setFiltersOpen(true)}
       />
 
-      {/*
-        One layout, one map instance. Phones show a single pane at a time; from
-        `md` up (an unfolded Duo, a tablet, a desktop) both sit side by side.
-        The MapView is never mounted twice - two WebGL contexts would double
-        memory and tile requests, and the hidden one renders at zero size.
-      */}
+      {error && (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-rule px-3 py-1.5 text-sm sm:px-4">
+          <p role="alert" className="font-medium text-outdated">
+            {venues.length > 0 ? `${error} Showing the last results.` : error}
+          </p>
+          <button type="button" onClick={retry} className="pf-button pf-button-quiet shrink-0 px-3">
+            Try again
+          </button>
+        </div>
+      )}
+
       <div className="flex min-h-0 flex-1">
-        <div
+        <section
+          aria-label="Deal results"
           className={clsx(
-            "pf-list-pane min-h-0 md:shrink-0 md:border-r md:border-rule",
-            mobileView === "map" && "hidden md:block",
+            "pf-list-pane min-h-0 min-w-0 discovery-wide:shrink-0 discovery-wide:border-r discovery-wide:border-rule",
+            mobileView === "map" && "hidden discovery-wide:block",
           )}
         >
           {list}
-        </div>
+        </section>
 
-        <div
+        <section
+          ref={mapPaneRef}
+          aria-label="Deal map"
           className={clsx(
             "relative min-h-0 min-w-0 flex-1",
-            mobileView === "list" && "hidden md:block",
+            mobileView === "list" && "hidden discovery-wide:block",
           )}
         >
-          {map}
+          {hasShownMap ? map : <div className="size-full bg-paper-sunk" />}
 
           {/* Marker tap on mobile surfaces the same card the list uses. */}
           {selectedVenue && (
-            <div className="pf-sheet-in absolute inset-x-0 bottom-0 z-20 p-3 pb-[max(4.75rem,calc(env(safe-area-inset-bottom)+4rem))] md:hidden">
+            <div className="pf-scroll absolute inset-x-0 bottom-0 z-20 max-h-[65%] overflow-y-auto overscroll-contain p-3 discovery-wide:hidden">
               <VenueCard
+                key={selectedVenue.id}
                 venue={selectedVenue}
                 isSelected
+                idPrefix="map-venue"
                 onSelect={() => setSelectedVenueId(null)}
                 onVerified={patchDeal}
                 onReport={(deal, v) => setReportTarget({ deal, venue: v })}
               />
             </div>
           )}
-        </div>
+        </section>
       </div>
 
-      {/*
-        Mobile view switch, thumb-reachable, above the safe area.
-
-        Absolute to this app, not fixed to the viewport: the state, city and
-        price pages embed the app in an 85dvh box with crawlable text below
-        it, and a fixed switch followed the reader down into that text,
-        floating over it and toggling a pane that was no longer on screen.
-      */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center pb-[max(0.85rem,env(safe-area-inset-bottom))] md:hidden">
+      <div className="flex shrink-0 justify-center border-t border-rule bg-paper py-1 discovery-wide:hidden">
         <div
-          role="tablist"
+          role="group"
           aria-label="View results as"
-          className="pointer-events-auto flex gap-1 rounded-full border-[1.5px] border-ink bg-paper p-1 shadow-lift"
+          className="flex gap-1 rounded-full border border-rule-strong bg-card p-0.5"
         >
           {(["list", "map"] as const).map((view) => (
             <button
               key={view}
-              role="tab"
               type="button"
-              aria-selected={mobileView === view}
-              onClick={() => {
-                setMobileView(view);
-                if (view === "map") setFitNonce((n) => n + 1);
-              }}
+              aria-pressed={mobileView === view}
+              onClick={() => setMobileView(view)}
               className={clsx(
                 "min-h-11 min-w-[86px] rounded-full px-4 py-2.5 text-sm font-bold transition-colors",
                 mobileView === view ? "bg-ink text-paper" : "text-ink",

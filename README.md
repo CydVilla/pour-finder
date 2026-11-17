@@ -245,6 +245,13 @@ list is a full text alternative to the map, `prefers-reduced-motion` respected,
 blocked. Freshness is communicated by colour **and** shape **and** a full
 sentence.
 
+Pour Finder adapts to the Safari window on iPhone Duo. The outer screen and
+Split View use a List/Map switch; the wider inner display shows both panes side
+by side. Opening or closing the phone keeps the current search and map position.
+The layout uses available width, so the same behavior works on other narrow and
+wide windows. See [WebKit's iPhone Duo viewport guide](https://webkit.org/blog/18486/#viewport-sizes)
+for the dimensions to use when testing.
+
 ---
 
 ## Project layout

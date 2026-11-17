@@ -36,8 +36,6 @@ interface Props {
   onSearchArea: (bounds: BoundingBox) => void;
   userLocation: { lat: number; lng: number } | null;
   focus: MapFocus | null;
-  /** Bump to refit the viewport to the current results. */
-  fitNonce: number;
   isLoading: boolean;
   className?: string;
 }
@@ -49,7 +47,6 @@ export default function MapView({
   onSearchArea,
   userLocation,
   focus,
-  fitNonce,
   isLoading,
   className,
 }: Props) {
@@ -57,6 +54,7 @@ export default function MapView({
   const mapRef = useRef<MapLibreMap | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const programmaticMoveRef = useRef(false);
+  const hasPositionedRef = useRef(false);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
 
   const [showSearchArea, setShowSearchArea] = useState(false);
@@ -80,18 +78,23 @@ export default function MapView({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: process.env.NEXT_PUBLIC_MAP_STYLE_URL || DEFAULT_STYLE,
-      center: [-71.0589, 42.3601], // Boston. Overridden the moment we have data.
-      zoom: 12,
-      attributionControl: { compact: true },
-      // Keeps low-end phones from burning battery on a 3D globe they can't use.
-      pitchWithRotate: false,
-      dragRotate: false,
-      maxZoom: 19,
-      minZoom: 3,
-    });
+    let map: MapLibreMap;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: process.env.NEXT_PUBLIC_MAP_STYLE_URL || DEFAULT_STYLE,
+        center: [-71.0589, 42.3601], // Boston. Overridden the moment we have data.
+        zoom: 12,
+        attributionControl: { compact: true },
+        pitchWithRotate: false,
+        dragRotate: false,
+        maxZoom: 19,
+        minZoom: 3,
+      });
+    } catch {
+      setStyleFailed(true);
+      return;
+    }
     mapRef.current = map;
 
     // Dev-only handle so the map can be poked from the console
@@ -155,7 +158,10 @@ export default function MapView({
         programmaticMoveRef.current = false;
         return;
       }
-      if ((event as { originalEvent?: unknown }).originalEvent) setShowSearchArea(true);
+      if ((event as { originalEvent?: unknown }).originalEvent) {
+        hasPositionedRef.current = true;
+        setShowSearchArea(true);
+      }
     });
 
     map.on("click", "pf-clusters", (event) => {
@@ -196,10 +202,13 @@ export default function MapView({
     }
 
     return () => {
-      popupRef.current?.remove();
+      const popup = popupRef.current;
+      popupRef.current = null;
+      popup?.remove();
       userMarkerRef.current?.remove();
       map.remove();
       mapRef.current = null;
+      hasPositionedRef.current = false;
     };
   }, []);
 
@@ -221,7 +230,10 @@ export default function MapView({
       const entry = entries[0];
       if (!entry) return;
       const { width, height } = entry.contentRect;
-      if (width === 0 || height === 0) return;
+      if (width === 0 || height === 0) {
+        lastWidth = lastHeight = 0;
+        return;
+      }
       if (width === lastWidth && height === lastHeight) return;
       lastWidth = width;
       lastHeight = height;
@@ -244,7 +256,7 @@ export default function MapView({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.getSource(SELECTED_SOURCE_ID)) return;
+    if (!map) return;
 
     const selected = venues.find((v) => v.id === selectedVenueId) ?? null;
     const source = map.getSource(SELECTED_SOURCE_ID) as GeoJSONSource | undefined;
@@ -262,13 +274,14 @@ export default function MapView({
         : [],
     });
 
-    popupRef.current?.remove();
+    const previousPopup = popupRef.current;
     popupRef.current = null;
+    previousPopup?.remove();
 
     if (!selected) return;
 
     // Small on-map summary so the map is usable on its own, matching the card.
-    popupRef.current = new maplibregl.Popup({
+    const popup = new maplibregl.Popup({
       offset: 20,
       closeButton: true,
       closeOnClick: false,
@@ -278,8 +291,9 @@ export default function MapView({
       .setHTML(popupHtml(selected))
       .addTo(map);
 
-    popupRef.current.on("close", () => {
-      if (popupRef.current) onSelectRef.current(null);
+    popupRef.current = popup;
+    popup.on("close", () => {
+      if (popupRef.current === popup) onSelectRef.current(null);
     });
 
     if (!map.getBounds().contains([selected.longitude, selected.latitude])) {
@@ -296,6 +310,7 @@ export default function MapView({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !focus) return;
+    hasPositionedRef.current = true;
     programmaticMoveRef.current = true;
     map.easeTo({
       center: [focus.lng, focus.lat],
@@ -307,32 +322,21 @@ export default function MapView({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || fitNonce === 0) return;
-
-    // Deterministic resize on every explicit refit. On mobile the map pane is
-    // display:none while the list is showing, so MapLibre sizes its canvas to
-    // its 400x300 fallback; the ResizeObserver above catches most cases but is
-    // not delivered reliably in a throttled tab. Refits always follow a
-    // visibility change, so this is the dependable hook.
-    map.resize();
-    if (venues.length === 0) return;
+    if (!map || hasPositionedRef.current || venues.length === 0) return;
+    hasPositionedRef.current = true;
 
     const bounds = new maplibregl.LngLatBounds();
     for (const venue of venues) bounds.extend([venue.longitude, venue.latitude]);
 
-    // Single-pane layouts float the List/Map switch over the bottom of the
-    // map; 60px left the southernmost pin underneath it. Read per fit, not
-    // once: a Duo changes layout when it is folded or unfolded.
-    const underSwitch = window.matchMedia("(min-width: 48rem)").matches ? 0 : 56;
-
     programmaticMoveRef.current = true;
+    const padding = Math.min(40, map.getContainer().clientHeight / 4);
     map.fitBounds(bounds as LngLatBoundsLike, {
-      padding: { top: 60, bottom: 60 + underSwitch, left: 40, right: 40 },
+      padding,
       maxZoom: 15,
       duration: prefersReducedMotion() ? 0 : 500,
     });
     setShowSearchArea(false);
-  }, [fitNonce, venues]);
+  }, [venues]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -385,7 +389,7 @@ export default function MapView({
       {styleFailed && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-3">
           <p className="pf-card px-3 py-2 text-xs text-ink-soft">
-            Map tiles are unavailable. The list still works.
+            The map is unavailable. You can still browse the list.
           </p>
         </div>
       )}

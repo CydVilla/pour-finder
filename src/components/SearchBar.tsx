@@ -15,7 +15,7 @@ export interface PlacePick {
 interface Props {
   value: string;
   onChange: (value: string) => void;
-  /** Fires on submit / debounce; drives the text filter. */
+  /** Fires on submit; drives the text filter. */
   onSearch: (value: string) => void;
   onPickPlace: (place: PlacePick) => void;
   onUseMyLocation: () => void;
@@ -38,16 +38,19 @@ export function SearchBar({
   isLocating,
 }: Props) {
   const listId = useId();
-  const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
+  const [matches, setMatches] = useState<{ query: string; places: GeocodeResult[] } | null>(null);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const query = value.trim();
+  const suggestions = matches?.query === query ? matches.places : [];
+  const expanded = open && suggestions.length > 0;
 
   // Only ask for place suggestions when the text plausibly names a place.
   useEffect(() => {
-    const query = value.trim();
     if (query.length < 2) {
-      setSuggestions([]);
+      setMatches(null);
       return;
     }
     const controller = new AbortController();
@@ -58,7 +61,7 @@ export function SearchBar({
         });
         if (!response.ok) return;
         const data = (await response.json()) as { places: GeocodeResult[] };
-        setSuggestions(data.places.slice(0, 5));
+        if (!controller.signal.aborted) setMatches({ query, places: data.places.slice(0, 5) });
       } catch {
         /* aborted or offline; the text filter still works */
       }
@@ -68,7 +71,7 @@ export function SearchBar({
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [value]);
+  }, [query]);
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
@@ -86,49 +89,59 @@ export function SearchBar({
       radiusMeters: place.defaultRadiusMeters,
     });
     onChange("");
-    onSearch("");
     setOpen(false);
     setActiveIndex(-1);
+    searchRef.current?.blur();
+  };
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const picked = expanded ? suggestions[activeIndex] : undefined;
+    if (picked) {
+      choose(picked);
+      return;
+    }
+    onSearch(value);
+    setOpen(false);
+    setActiveIndex(-1);
+    searchRef.current?.blur();
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!open || suggestions.length === 0) {
-      if (event.key === "Enter") onSearch(value);
-      return;
-    }
+    if (!expanded) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setActiveIndex((i) => (i + 1) % suggestions.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      const picked = suggestions[activeIndex];
-      if (picked) choose(picked);
-      else onSearch(value);
-      setOpen(false);
     } else if (event.key === "Escape") {
+      event.preventDefault();
       setOpen(false);
       setActiveIndex(-1);
     }
   };
 
   return (
-    <div ref={wrapRef} className="relative flex-1">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+    <div ref={wrapRef} className="relative min-w-0 flex-1">
+      <form role="search" onSubmit={submit} className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-ink-faint" />
           <input
+            ref={searchRef}
             type="search"
             className="pf-input pl-9.5"
             placeholder="Bar, beer, city or ZIP"
             aria-label="Search for a bar, a beer, or a place"
-            aria-expanded={open && suggestions.length > 0}
-            aria-controls={listId}
+            aria-expanded={expanded}
+            aria-controls={expanded ? listId : undefined}
+            aria-activedescendant={
+              expanded && activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined
+            }
             aria-autocomplete="list"
             role="combobox"
             value={value}
+            maxLength={120}
             onChange={(event) => {
               onChange(event.target.value);
               setOpen(true);
@@ -144,7 +157,7 @@ export function SearchBar({
           type="button"
           onClick={onUseMyLocation}
           disabled={isLocating}
-          className="pf-button pf-button-quiet shrink-0 px-3 py-2.5 text-sm"
+          className="pf-button pf-button-quiet min-w-touch shrink-0 px-3 py-2.5 text-sm"
           aria-label={
             locationLabel ? `Using ${locationLabel}. Update location` : "Use my current location"
           }
@@ -157,9 +170,9 @@ export function SearchBar({
           )}
           <span className="hidden sm:inline">{isLocating ? "Locating" : "Near me"}</span>
         </button>
-      </div>
+      </form>
 
-      {open && suggestions.length > 0 && (
+      {expanded && (
         <ul
           id={listId}
           role="listbox"
@@ -167,10 +180,12 @@ export function SearchBar({
           className="pf-card absolute z-30 mt-1.5 w-full overflow-hidden py-1"
         >
           {suggestions.map((place, index) => (
-            <li key={`${place.label}-${index}`}>
+            <li key={`${place.label}-${index}`} role="presentation">
               <button
+                id={`${listId}-${index}`}
                 type="button"
                 role="option"
+                tabIndex={-1}
                 aria-selected={index === activeIndex}
                 onClick={() => choose(place)}
                 onMouseEnter={() => setActiveIndex(index)}

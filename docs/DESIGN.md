@@ -49,37 +49,25 @@ clearest sign that nobody designed the screen. Size icons with `size-*`
 
 ## Screen sizes
 
-The layout is driven by width, with one height-aware variant. Never read
-`window.innerWidth` once and cache it: a foldable changes width mid-session
-with no rotation event. Use CSS, or listen to `matchMedia(...).change`.
+Use CSS to adapt as the window changes size. The layout can change mid-session
+when a foldable opens or closes.
 
-| Width | Layout | Devices |
-|---|---|---|
-| < 768px | One pane at a time, List/Map switch | Phones; iPhone Duo folded (~466px) and in Split View (~445px); Duo unfolded and rotated (~626px) |
-| 768–1023px | List and map 50/50 | iPhone Duo unfolded (~890×626), iPad portrait |
-| ≥ 1024px | List `clamp(380px, 32vw, 480px)`, map fills | iPad landscape, laptops |
+| Viewport | Layout |
+|---|---|
+| Below 656px, or 656–767px and below 480px tall | One pane at a time with a List/Map switch |
+| 656–767px and at least 480px tall, or 768–1023px | List and map side by side |
+| 1024px and wider | List `clamp(380px, 32vw, 480px)`, map fills |
 
 ### iPhone Duo
 
-The Duo's inner screen opens in landscape at roughly 890×626 CSS px, with the
-hinge down the middle. Safari reports neither the Viewport Segments API nor
-the Device Posture API, so the page can't detect the fold. The layout is
-built so that it doesn't need to:
+The outer display and narrow Split View windows use the List/Map switch.
+Both orientations of the inner display have room for two panes. Browsers
+that report horizontal viewport segments position the list at the first
+segment's width. In wider landscape layouts, sheets dock beside the list.
+The map fits the results when it first appears and keeps its position on
+subsequent resizes.
 
-- **The 50/50 split lands on the crease**, so list and map each get one half
-  and no card straddles the hinge. Browsers that do report segments
-  (`horizontal-viewport-segments: 2`, Chrome on Android foldables) get the
-  exact hinge width from `env(viewport-segment-width 0 0)`.
-- **Sheets dock to the right half** on a `spread` screen (768–1023px wide,
-  landscape) rather than centring over the crease. They cover the map, and the
-  list on the left keeps updating as filters change.
-- **Chrome is one row from `md` up.** The result count and sort join the
-  filter bar. On phones they sit at the top of the list and scroll away,
-  because the folded screen is shorter than any recent iPhone's.
-- **Unfolding refits the map** to the results, because the map pane appears
-  for the first time at a size it was never laid out for.
-
-To test, add DevTools presets at **466×678** (folded), **890×626** (open) and
-**445×626** (Split View), and drag between 466 and 890 without reloading.
-These are third-party estimates at 3× DPR, not Apple's numbers. Re-measure on
-the Xcode simulator or a device and correct this table if they differ.
+For browser testing, use the [Safari 27.1 viewport sizes published by WebKit](https://webkit.org/blog/18486/#viewport-sizes).
+Test the outer screen at 382×580 and 594×368, the inner screen at 669×867
+and 951×585, and Split View at 385×571. Resize between compact and wide
+views without reloading to check that the search and selection persist.

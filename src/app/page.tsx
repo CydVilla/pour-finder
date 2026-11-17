@@ -61,11 +61,13 @@ export default async function HomePage({
   const filters = parseFilters(params);
 
   let initialData: DealSearchResponse;
+  let initialSearchFailed = false;
   try {
     initialData = await searchDeals(filters, "ssr");
   } catch (error) {
     // A database hiccup should still render the shell; the client refetches.
     console.error("[page] initial search failed", error);
+    initialSearchFailed = true;
     initialData = {
       venues: [],
       total: 0,
@@ -78,7 +80,11 @@ export default async function HomePage({
   return (
     <main id="results" className="h-full">
       <h1 className="sr-only">Cheap beer deals near you</h1>
-      <DiscoveryApp initialData={initialData} initialFilters={filters} />
+      <DiscoveryApp
+        initialData={initialData}
+        initialFilters={filters}
+        initialSearchFailed={initialSearchFailed}
+      />
       <StructuredData data={initialData} />
     </main>
   );

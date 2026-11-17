@@ -31,9 +31,7 @@ export const viewport: Viewport = {
   themeColor: "#faf6ef",
   width: "device-width",
   initialScale: 1,
-  // Never block zoom: pinch-to-zoom is an accessibility requirement, and this
-  // app is used one-handed in dark bars.
-  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
